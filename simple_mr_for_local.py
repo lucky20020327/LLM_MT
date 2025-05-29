@@ -19,9 +19,9 @@ function_valid_code_prompt = open(
     "./template/function_valid_code.prompt", "r", encoding="utf-8"
 ).read()
 function_mr_prompt = open("./template/function_mr.prompt", "r", encoding="utf-8").read()
-# The following templates are used to generate the test program for a function.
-function_test_program_template = open(
-    "./template/function_test_program.template", "r", encoding="utf-8"
+# This is used for functions are not in a public package. So the source_code of the function is needed to be imported.
+local_function_test_program_template = open(
+    "./template/local_function_test_program.template", "r", encoding="utf-8"
 ).read()
 
 
@@ -92,20 +92,6 @@ def call_LLM(prompt, api_key, baseLLM="deepseek"):
         temperature=0.2,
     )
     return response.choices[0].message.content.strip()
-
-
-def gen_MR_for_class_method(method_info: dict, class_info: dict):
-    """
-    Generate metamorphic relations for a class method.
-    This function should return a list of metamorphic relations that can be used to generate test cases.
-
-    Return value is a list of dictionaries with the following keys:
-    - "mr_input_relation": A string describing the metamorphic relation input.
-    - "mr_output_relation": A string describing the metamorphic relation output.
-    - "source_input_constraints": A string describing the constraints on the source input.
-    - "followup_input_constraints": A string describing the constraints on the follow-up input.
-    """
-    return []
 
 
 def gen_MR_for_function(function_info: dict):
@@ -252,6 +238,7 @@ def gen_valid_code_for_function(mr: dict, function_info: dict):
         function_signature=function_signature,
         function_docstring=function_docstring,
         input_metamorphic_relation=mr["mr_input_relation"],
+        input_transformation_steps=mr["mr_input_transformation_steps"],
         output_metamorphic_relation=mr["mr_output_relation"],
         output_validation_steps=mr["mr_output_validation_steps"],
     )
@@ -270,7 +257,7 @@ def gen_valid_code_for_function(mr: dict, function_info: dict):
     return valid_code
 
 
-def test_program_construction_for_function(
+def test_program_construction_for_local_function(
     function_info: dict,
     mr: dict,
     source_input_generator: str,
@@ -278,25 +265,23 @@ def test_program_construction_for_function(
     valid_code: str,
 ):
     """
-    Construct a test program for a function using the generated source input, follow-up input, and valid code.
+    Construct a test program for a local function using the generated source input, follow-up input, and valid code.
     This function should return a string representing the test program.
     """
     logger.info(
-        f"Constructing test program for function {function_info['name']} with metamorphic relation {mr['mr_input_relation']}"
+        f"Constructing test program for local function {function_info['name']} with metamorphic relation {mr['mr_input_relation']}"
     )
 
     mr_str = json.dumps(mr, indent=4)
 
     function_full_name = function_info["name"]
+    function_source_code = function_info["source_code"]
 
     function_name = function_full_name.split(".")[-1]
-    module_name = ".".join(function_full_name.split(".")[:-1])
 
-    import_statement = f"from {module_name} import {function_name}\n"
-
-    test_program = function_test_program_template.format(
-        import_statements=import_statement,
+    test_program = local_function_test_program_template.format(
         metamorphic_relation=mr_str,
+        function_source_code=function_source_code,
         source_input_code=source_input_generator,
         followup_input_code=followup_input_generator,
         validate_result_code=valid_code,
@@ -306,33 +291,39 @@ def test_program_construction_for_function(
 
     logger.debug(f"Generated test program: {test_program}")
     logger.info(
-        f"Test program for function {function_info['name']} with metamorphic relation {mr['mr_input_relation']} constructed successfully."
+        f"Test program for local function {function_info['name']} with metamorphic relation {mr['mr_input_relation']} constructed successfully."
     )
 
     return test_program
 
 
-def MT_for_function(function_info: dict):
+def gen_test_template_for_local_function(function_info: dict):
     """
-    MT for a function.
-    This function will build a test program for the given function using metamorphic relations.
+    This function will build a test program template for the given local function using metamorphic relations.
+    The template can be used to generate test program instances for mutants of the function by formatting {function_source_code}.
     """
 
     function_full_name = function_info["name"]
     function_name = function_full_name.split(".")[-1]
+    # For local functions, the module name is the customized path representing the dataset architecture.
+    # For example, the function from dataset humaneval is named as humaneval.<function_name>.
     module_name = ".".join(function_full_name.split(".")[:-1])
-    test_program_folder = os.path.join(
-        ".", "simple_output", "test_program_templates", module_name.replace(".", os.sep)
+    test_program_template_folder = os.path.join(
+        ".",
+        "simple_output",
+        "test_program_templates",
+        module_name.replace(".", os.sep),
+        f"test_{function_name}",
     )
     mr_folder = os.path.join(
         ".", "simple_output", "metamorphic_relations", module_name.replace(".", os.sep)
     )
-    os.makedirs(test_program_folder, exist_ok=True)
+    os.makedirs(test_program_template_folder, exist_ok=True)
+    os.makedirs(mr_folder, exist_ok=True)
 
     # save the metamorphic relations to a JSON file
     mr_file_name = f"{function_name}_mrs.json"
     mr_file_path = os.path.join(mr_folder, mr_file_name)
-    os.makedirs(os.path.dirname(mr_file_path), exist_ok=True)
 
     if os.path.exists(mr_file_path):
         logger.info(
@@ -351,34 +342,105 @@ def MT_for_function(function_info: dict):
             json.dump(MRs, f, indent=4)
 
     for mr_id, mr in enumerate(MRs):
-        test_program_file_name = f"test_{mr_id}.py"
-        test_program_file_path = os.path.join(
-            test_program_folder, f"test_{function_name}", test_program_file_name
+        test_program_template_file_name = f"test_{mr_id}.py.template"
+        test_program_template_file_path = os.path.join(
+            test_program_template_folder, test_program_template_file_name
         )
 
-        if os.path.exists(test_program_file_path):
-            logger.info(
-                f"Test program file {test_program_file_path} already exists. Skipping."
-            )
-            continue
+        if os.path.exists(test_program_template_file_path):
+            # read the content and check if the mr is inside the file
+            with open(test_program_template_file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            if mr["mr_input_relation"] in content:
+                logger.info(
+                    f"Test program template file {test_program_template_file_path} already exists. Skipping."
+                )
+                continue
+            else:
+                logger.warning(
+                    f"Test program template file {test_program_template_file_path} exists but does not contain the metamorphic relation. Overwriting."
+                )
 
         source_input_code = gen_source_input_for_function(mr, function_info)
         followup_input_code = gen_followup_input_for_function(mr, function_info)
         valid_code = gen_valid_code_for_function(mr, function_info)
 
-        test_program = test_program_construction_for_function(
+        test_program = test_program_construction_for_local_function(
             function_info,
             mr,
             source_input_code,
             followup_input_code,
             valid_code,
         )
-
-        logger.info(f"Writing test program to {test_program_file_path}")
-        with open(test_program_file_path, "w", encoding="utf-8") as f:
+        logger.info(
+            f"Writing test program template to {test_program_template_file_path}"
+        )
+        with open(test_program_template_file_path, "w", encoding="utf-8") as f:
             f.write(test_program)
 
 
+def evaluate_mr(function_info: dict):
+    """
+    Evaluate the metamorphic relations on a function and its mutants.
+    This function should execute the test program and check if the metamorphic relations hold.
+    """
+    function_full_name = function_info["name"]
+    function_name = function_full_name.split(".")[-1]
+    module_name = ".".join(function_full_name.split(".")[:-1])
+
+    test_program_template_folder = os.path.join(
+        ".",
+        "simple_output",
+        "test_program_templates",
+        module_name.replace(".", os.sep),
+        f"test_{function_name}",
+    )
+
+    mr_folder = os.path.join(
+        ".", "simple_output", "metamorphic_relations", module_name.replace(".", os.sep)
+    )
+
+    mr_file_name = f"{function_name}_mrs.json"
+    mr_file_path = os.path.join(mr_folder, mr_file_name)
+
+    if not os.path.exists(mr_file_path):
+        logger.error(f"Metamorphic relations file {mr_file_path} does not exist.")
+        raise FileNotFoundError(
+            f"Metamorphic relations file {mr_file_path} does not exist."
+        )
+
+    with open(mr_file_path, "r", encoding="utf-8") as f:
+        MRs = json.load(f)
+
+    for mr_id, mr in enumerate(MRs):
+        test_program_template_file_name = f"test_{mr_id}.py.template"
+        test_program_template_file_path = os.path.join(
+            test_program_template_folder, test_program_template_file_name
+        )
+        
+        test_program_instance_folder = os.path.join(
+            ".",
+            "simple_output",
+            "test_program_instances",
+            module_name.replace(".", os.sep),
+            f"test_{function_name}",
+        )
+        
+
+        if not os.path.exists(test_program_template_file_path):
+            logger.error(
+                f"Test program template file {test_program_template_file_path} does not exist."
+            )
+            raise FileNotFoundError(
+                f"Test program template file {test_program_template_file_path} does not exist."
+            )
+
+        # Execute the test program on original function and check if the metamorphic relations hold
+        original_test_program_file_path = test_program_template_file_path.format(
+            function_source_code=function_info["source_code"]
+        )
+        
+        
 
 
 if __name__ == "__main__":
@@ -407,18 +469,12 @@ if __name__ == "__main__":
     logger.info(f"Loaded {len(api_infos)} API infos from {api_file}")
 
     for api_info in api_infos:
-        if api_info["type"] == "function":
-            logger.info(f"Processing function: {api_info['name']}")
-            MT_for_function(api_info)
-        elif api_info["type"] == "class":
-            logger.info(f"Processing class: {api_info['name']}")
-            for method_info in api_info["methods"]:
-                logger.info(
-                    f"Processing method: {method_info['name']} in class {api_info['name']}"
-                )
-                # MT_for_class_method(method_info, api_info)
-                pass
-        else:
-            raise ValueError(
-                f"Unknown type {api_info['type']} for API info {api_info['name']}"
-            )
+        assert (
+            api_info["type"] == "local_function"
+        ), "Only local functions are supported in this script."
+        logger.info(f"Processing local function: {api_info['name']}")
+        gen_test_template_for_local_function(api_info)
+
+    for api_info in api_infos:
+        assert "mutations" in api_info, "Mutations field is missing in the API info."
+        evaluate_mr(api_info)

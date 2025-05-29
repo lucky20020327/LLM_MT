@@ -11,24 +11,24 @@ And the specified metamorphic relations:
 
 * **Input Metamorphic Relation:**
   {input_metamorphic_relation}
+  {input_transformation_steps}
 
 * **Output Metamorphic Relation:**
   {output_metamorphic_relation}
+  {output_validation_steps}
 
 Please implement a function named `validate_MR_result` that checks whether the results of two calls to `{function_name}` (using source and follow-up inputs) satisfy the specified output metamorphic relations.
-
-The validation of the results must follow the following steps:
-
-{output_validation_steps}
 
 The function signature should be:
 
 ```validate_MR_result
-def validate_MR_result(source_result, followup_result):
+def validate_MR_result(source_input, followup_input, source_result, followup_result):
     \"\"\"
     Validate the results of two calls to the `{function_name}` function against the specified output metamorphic relations.
 
     Parameters:
+        source_input: The original input parameters used for the first call to `{function_name}`.
+        followup_input: The modified input parameters used for the follow-up call to `{function_name}`.
         source_result: The result from the first (source) call to `{function_name}`.
         followup_result: The result from the follow-up call to `{function_name}`.
 
