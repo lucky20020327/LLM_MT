@@ -40,6 +40,7 @@ names = []
 for i, item in enumerate(data):
     source_code = item["oracle_code"]
     entry_point = item["entry_point"]
+    test_code = item.get("test_function", "")
     function_info = extract_function_info(source_code, entry_point)
 
     type = "local_function"
@@ -59,6 +60,7 @@ for i, item in enumerate(data):
             "signature": signature,
             "docstring": docstring,
             "source_code": source_code,
+            "test_code": test_code,
             "methods": methods,
         }
     )
