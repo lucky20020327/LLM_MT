@@ -2,6 +2,9 @@ import os
 import json
 import datetime
 import sys
+import signal
+import traceback
+import subprocess
 
 from loguru import logger
 from openai import OpenAI
@@ -29,6 +32,16 @@ baseLLM = "deepseek"
 api_key = "sk-ca15c4d0bec041c0b118a2ec0f69d388"
 
 TEST_COUNT_PER_MR = 10
+
+
+# Define a timeout exception
+class TimeoutException(Exception):
+    pass
+
+
+# Define signal handler
+def handler(signum, frame):
+    raise TimeoutException("Execution timed out!")
 
 
 def parse_mr_response(response: str):
@@ -379,6 +392,33 @@ def gen_test_template_for_local_function(function_info: dict):
             f.write(test_program)
 
 
+def execute_test_program(test_program_file_path: str):
+    """
+    Execute the test program and return the result.
+    This function should handle any exceptions that occur during execution.
+    """
+    try:
+        # execute the test program using subprocess
+        logger.info(f"Executing test program {test_program_file_path}")
+        result = subprocess.run(
+            ["python", test_program_file_path],
+            capture_output=True,
+            text=True,
+            timeout=5,  # Set a timeout for the execution
+        )
+        if result.returncode != 0:
+            logger.error(
+                f"Test program {test_program_file_path} failed with return code {result.returncode}"
+            )
+            return False
+        logger.info(f"Test program {test_program_file_path} executed successfully.")
+        return True
+
+    except Exception as e:
+        logger.warning(f"Error executing test program {test_program_file_path}: {e}")
+        return False
+
+
 def evaluate_mr(function_info: dict):
     """
     Evaluate the metamorphic relations on a function and its mutants.
@@ -409,23 +449,31 @@ def evaluate_mr(function_info: dict):
             f"Metamorphic relations file {mr_file_path} does not exist."
         )
 
+    mr_evaluate_results = {}
+    mr_evaluate_results_file_path = os.path.join(
+        ".",
+        "simple_output",
+        "mr_evaluate_results",
+        module_name.replace(".", os.sep),
+        f"{function_name}_mr_evaluate_results.json",
+    )
+    os.makedirs(os.path.dirname(mr_evaluate_results_file_path), exist_ok=True)
+
     with open(mr_file_path, "r", encoding="utf-8") as f:
         MRs = json.load(f)
 
     for mr_id, mr in enumerate(MRs):
+
+        mr_evaluate_results[mr_id] = {
+            "mr": mr,
+            "valid_mr": False,
+            "mutant_detection_results": {},
+        }
+
         test_program_template_file_name = f"test_{mr_id}.py.template"
         test_program_template_file_path = os.path.join(
             test_program_template_folder, test_program_template_file_name
         )
-        
-        test_program_instance_folder = os.path.join(
-            ".",
-            "simple_output",
-            "test_program_instances",
-            module_name.replace(".", os.sep),
-            f"test_{function_name}",
-        )
-        
 
         if not os.path.exists(test_program_template_file_path):
             logger.error(
@@ -435,12 +483,94 @@ def evaluate_mr(function_info: dict):
                 f"Test program template file {test_program_template_file_path} does not exist."
             )
 
-        # Execute the test program on original function and check if the metamorphic relations hold
-        original_test_program_file_path = test_program_template_file_path.format(
-            function_source_code=function_info["source_code"]
+        test_program_instance_folder = os.path.join(
+            ".",
+            "simple_output",
+            "test_program_instances",
+            module_name.replace(".", os.sep),
+            f"test_{function_name}",
+            f"mr_{mr_id}",
         )
-        
-        
+        os.makedirs(test_program_instance_folder, exist_ok=True)
+
+        test_program_template = open(
+            test_program_template_file_path, "r", encoding="utf-8"
+        ).read()
+
+        # Execute the test program on original function and check if the metamorphic relations hold
+        original_test_program_file_path = test_program_template.replace(
+            "{function_source_code}",
+            function_info["source_code"],
+        )
+        original_test_program_file_name = f"original.py"
+        with open(
+            os.path.join(test_program_instance_folder, original_test_program_file_name),
+            "w",
+            encoding="utf-8",
+        ) as f:
+            f.write(original_test_program_file_path)
+        logger.info(
+            f"Writing original test program instance to {os.path.join(test_program_instance_folder, original_test_program_file_name)}"
+        )
+
+        if not execute_test_program(
+            os.path.join(test_program_instance_folder, original_test_program_file_name)
+        ):
+            logger.error(f"Test program for original function failed.")
+            continue
+        mr_evaluate_results[mr_id]["valid_mr"] = True
+        # Now, we need to execute the test program on each mutant of the function
+        if "mutations" not in function_info:
+            logger.error(
+                f"Mutations field is missing in the function info for {function_full_name}."
+            )
+            raise ValueError(
+                f"Mutations field is missing in the function info for {function_full_name}."
+            )
+        for mutation in function_info["mutations"]:
+            mutation_name = mutation["name"]
+            mutation_source_code = mutation["source_code"]
+
+            test_program_instance_file_path = test_program_template.replace(
+                "{function_source_code}",
+                mutation_source_code,
+            )  # Replace the function source code with the mutation source code
+            test_program_instance_file_name = f"{mutation_name}.py"
+            with open(
+                os.path.join(
+                    test_program_instance_folder, test_program_instance_file_name
+                ),
+                "w",
+                encoding="utf-8",
+            ) as f:
+                f.write(test_program_instance_file_path)
+            logger.info(
+                f"Writing test program instance for mutation {mutation_name} to {os.path.join(test_program_instance_folder, test_program_instance_file_name)}"
+            )
+
+            if execute_test_program(
+                os.path.join(
+                    test_program_instance_folder, test_program_instance_file_name
+                )
+            ):
+                logger.error(f"Test program for mutation {mutation_name} passed.")
+                mr_evaluate_results[mr_id]["mutant_detection_results"][
+                    mutation_name
+                ] = False
+            else:
+                logger.info(
+                    f"Test program for mutation {mutation_name} failed. It indicates that the metamorphic relation detects the mutation."
+                )
+                # If the test program passed, we can check if the metamorphic relation holds
+                mr_evaluate_results[mr_id]["mutant_detection_results"][
+                    mutation_name
+                ] = True
+
+    with open(mr_evaluate_results_file_path, "w", encoding="utf-8") as f:
+        json.dump(mr_evaluate_results, f, indent=4)
+    logger.info(
+        f"Metamorphic relation evaluation results saved to {mr_evaluate_results_file_path}"
+    )
 
 
 if __name__ == "__main__":
@@ -463,7 +593,7 @@ if __name__ == "__main__":
         format="{time} {level} {file}|{line}: {message}",
     )
 
-    api_file = "/Users/lucky/work/ZJU/2025_04_23_metamorphic_testing/LLM_based_MT/dataset/humaneval/humaneval_example.json"
+    api_file = "/Users/lucky/work/ZJU/2025_04_23_metamorphic_testing/LLM_based_MT/dataset/humaneval/humaneval_mutated.json"
     api_infos = json.load(open(api_file, "r", encoding="utf-8"))
 
     logger.info(f"Loaded {len(api_infos)} API infos from {api_file}")
@@ -473,8 +603,25 @@ if __name__ == "__main__":
             api_info["type"] == "local_function"
         ), "Only local functions are supported in this script."
         logger.info(f"Processing local function: {api_info['name']}")
-        gen_test_template_for_local_function(api_info)
+        try:
+            gen_test_template_for_local_function(api_info)
+        except Exception as e:
+            logger.error(
+                f"Error generating test template for function {api_info['name']}: {e}"
+            )
+            continue
 
     for api_info in api_infos:
         assert "mutations" in api_info, "Mutations field is missing in the API info."
-        evaluate_mr(api_info)
+        logger.info(
+            f"Evaluating metamorphic relations for function: {api_info['name']}"
+        )
+        try:
+            evaluate_mr(api_info)
+        except Exception as e:
+            logger.error(
+                f"Error evaluating metamorphic relations for function {api_info['name']}: {e}"
+            )
+            logger.error(traceback.format_exc())
+            continue
+    logger.info("Finished processing all local functions.")
