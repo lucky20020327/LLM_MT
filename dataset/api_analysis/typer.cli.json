@@ -1,0 +1,45 @@
+[
+  {
+    "type": "class",
+    "name": "typer.cli.TyperCLIGroup",
+    "signature": "(*, name: Optional[str] = None, commands: Union[Dict[str, click.core.Command], Sequence[click.core.Command], NoneType] = None, rich_markup_mode: Literal['markdown', 'rich', None] = 'rich', rich_help_panel: Optional[str] = None, **attrs: Any) -> None",
+    "docstring": "A group allows a command to have subcommands attached. This is\nthe most common way to implement nesting in Click.\n\n:param name: The name of the group command.\n:param commands: A dict mapping names to :class:`Command` objects.\n    Can also be a list of :class:`Command`, which will use\n    :attr:`Command.name` to create the dict.\n:param attrs: Other command arguments described in\n    :class:`MultiCommand`, :class:`Command`, and\n    :class:`BaseCommand`.\n\n.. versionchanged:: 8.0\n    The ``commands`` argument can be a list of command objects.",
+    "source_code": "class TyperCLIGroup(typer.core.TyperGroup):\n    def list_commands(self, ctx: click.Context) -> List[str]:\n        self.maybe_add_run(ctx)\n        return super().list_commands(ctx)\n\n    def get_command(self, ctx: click.Context, name: str) -> Optional[Command]:\n        self.maybe_add_run(ctx)\n        return super().get_command(ctx, name)\n\n    def invoke(self, ctx: click.Context) -> Any:\n        self.maybe_add_run(ctx)\n        return super().invoke(ctx)\n\n    def maybe_add_run(self, ctx: click.Context) -> None:\n        maybe_update_state(ctx)\n        maybe_add_run_to_cli(self)\n",
+    "methods": [
+      {
+        "name": "typer.cli.TyperCLIGroup.get_command",
+        "signature": "(self, ctx: click.core.Context, name: str) -> Optional[click.core.Command]",
+        "docstring": "Given a context and a command name, this returns a\n:class:`Command` object if it exists or returns `None`.",
+        "source_code": "    def get_command(self, ctx: click.Context, name: str) -> Optional[Command]:\n        self.maybe_add_run(ctx)\n        return super().get_command(ctx, name)\n"
+      },
+      {
+        "name": "typer.cli.TyperCLIGroup.invoke",
+        "signature": "(self, ctx: click.core.Context) -> Any",
+        "docstring": "Given a context, this invokes the attached callback (if it exists)\nin the right way.",
+        "source_code": "    def invoke(self, ctx: click.Context) -> Any:\n        self.maybe_add_run(ctx)\n        return super().invoke(ctx)\n"
+      },
+      {
+        "name": "typer.cli.TyperCLIGroup.list_commands",
+        "signature": "(self, ctx: click.core.Context) -> List[str]",
+        "docstring": "Returns a list of subcommand names.\nNote that in Click's Group class, these are sorted.\nIn Typer, we wish to maintain the original order of creation (cf Issue #933)",
+        "source_code": "    def list_commands(self, ctx: click.Context) -> List[str]:\n        self.maybe_add_run(ctx)\n        return super().list_commands(ctx)\n"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "typer.cli.callback",
+    "signature": "(ctx: typer.models.Context, *, path_or_module: str = <typer.models.ArgumentInfo object at 0x1068e9a10>, app: str = <typer.models.OptionInfo object at 0x105347e10>, func: str = <typer.models.OptionInfo object at 0x1061d3dd0>, version: bool = <typer.models.OptionInfo object at 0x10547b010>) -> None",
+    "docstring": "Run Typer scripts with completion, without having to create a package.\n\nYou probably want to install completion for the typer command:\n\n$ typer --install-completion\n\nhttps://typer.tiangolo.com/",
+    "source_code": "@app.callback(cls=TyperCLIGroup, no_args_is_help=True)\ndef callback(\n    ctx: typer.Context,\n    *,\n    path_or_module: str = typer.Argument(None),\n    app: str = typer.Option(None, help=\"The typer app object/variable to use.\"),\n    func: str = typer.Option(None, help=\"The function to convert to Typer.\"),\n    version: bool = typer.Option(\n        False,\n        \"--version\",\n        help=\"Print version and exit.\",\n        callback=print_version,\n    ),\n) -> None:\n    \"\"\"\n    Run Typer scripts with completion, without having to create a package.\n\n    You probably want to install completion for the typer command:\n\n    $ typer --install-completion\n\n    https://typer.tiangolo.com/\n    \"\"\"\n    maybe_update_state(ctx)\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "typer.cli.docs",
+    "signature": "(ctx: typer.models.Context, name: str = <typer.models.OptionInfo object at 0x1068ea6d0>, output: Optional[pathlib.Path] = <typer.models.OptionInfo object at 0x1068e93d0>, title: Optional[str] = <typer.models.OptionInfo object at 0x1068ea050>) -> None",
+    "docstring": "Generate Markdown docs for a Typer app.",
+    "source_code": "@utils_app.command()\ndef docs(\n    ctx: typer.Context,\n    name: str = typer.Option(\"\", help=\"The name of the CLI program to use in docs.\"),\n    output: Optional[Path] = typer.Option(\n        None,\n        help=\"An output file to write docs to, like README.md.\",\n        file_okay=True,\n        dir_okay=False,\n    ),\n    title: Optional[str] = typer.Option(\n        None,\n        help=\"The title for the documentation page. If not provided, the name of \"\n        \"the program is used.\",\n    ),\n) -> None:\n    \"\"\"\n    Generate Markdown docs for a Typer app.\n    \"\"\"\n    typer_obj = get_typer_from_state()\n    if not typer_obj:\n        typer.echo(\"No Typer app found\", err=True)\n        raise typer.Abort()\n    click_obj = typer.main.get_command(typer_obj)\n    docs = get_docs_for_click(obj=click_obj, ctx=ctx, name=name, title=title)\n    clean_docs = f\"{docs.strip()}\\n\"\n    if output:\n        output.write_text(clean_docs)\n        typer.echo(f\"Docs saved to: {output}\")\n    else:\n        typer.echo(clean_docs)\n",
+    "methods": []
+  }
+]

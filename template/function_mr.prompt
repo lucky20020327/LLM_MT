@@ -1,0 +1,35 @@
+Given the function `{function_name}` defined in the Python module `{module_name}`:
+
+```python
+def {function_name}{function_signature}:
+    \"\"\"
+    {function_docstring}
+    \"\"\"
+```
+
+Please analyze the functionality of the function and generate a list of **metamorphic relations** based on its behavior.
+
+A metamorphic relation is a Python dictionary with the following keys:
+
+- "mr_input_relation": A string describing the metamorphic input relation .
+- "mr_input_transformation_steps": A string describing the metamorphic input transformation steps.
+- "mr_output_relation": A string describing the metamorphic output relation.
+- "mr_output_validation_steps": A string describing the metamorphic output validation steps.
+- "source_input_constraints": A string describing the constraints on the source input.
+- "followup_input_constraints": A string describing the constraints on the follow-up input.
+
+Please return the list in the following format, enclosed in ```mrs and ```, so it can be easily parsed:
+
+```mrs
+[
+    {{
+        "mr_input_relation": "{{mr_input_relation}}",
+        "mr_input_transformation_steps": "{{mr_input_transformation_steps}}",
+        "mr_output_relation": "{{mr_output_relation}}",
+        "mr_output_validation_steps": "{{mr_output_validation_steps}}",
+        "source_input_constraints": "{{source_input_constraints}}",
+        "followup_input_constraints": "{{followup_input_constraints}}"
+    }},
+    ...
+]
+```

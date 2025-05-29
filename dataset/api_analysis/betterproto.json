@@ -1,0 +1,73 @@
+[
+  {
+    "type": "class",
+    "name": "betterproto.FieldMetadata",
+    "signature": "(number: 'int', proto_type: 'str', map_types: 'Optional[Tuple[str, str]]' = None, group: 'Optional[str]' = None, wraps: 'Optional[str]' = None, optional: 'Optional[bool]' = False) -> None",
+    "docstring": "Stores internal metadata used for parsing & serialization.",
+    "source_code": "@dataclasses.dataclass(frozen=True)\nclass FieldMetadata:\n    \"\"\"Stores internal metadata used for parsing & serialization.\"\"\"\n\n    # Protobuf field number\n    number: int\n    # Protobuf type name\n    proto_type: str\n    # Map information if the proto_type is a map\n    map_types: Optional[Tuple[str, str]] = None\n    # Groups several \"one-of\" fields together\n    group: Optional[str] = None\n    # Describes the wrapped type (e.g. when using google.protobuf.BoolValue)\n    wraps: Optional[str] = None\n    # Is the field optional\n    optional: Optional[bool] = False\n\n    @staticmethod\n    def get(field: dataclasses.Field) -> \"FieldMetadata\":\n        \"\"\"Returns the field metadata for a dataclass field.\"\"\"\n        return field.metadata[\"betterproto\"]\n",
+    "methods": [
+      {
+        "name": "betterproto.FieldMetadata.get",
+        "signature": "(field: 'dataclasses.Field') -> \"'FieldMetadata'\"",
+        "docstring": "Returns the field metadata for a dataclass field.",
+        "source_code": "    @staticmethod\n    def get(field: dataclasses.Field) -> \"FieldMetadata\":\n        \"\"\"Returns the field metadata for a dataclass field.\"\"\"\n        return field.metadata[\"betterproto\"]\n"
+      }
+    ]
+  },
+  {
+    "type": "function",
+    "name": "betterproto.dataclass_field",
+    "signature": "(number: 'int', proto_type: 'str', *, map_types: 'Optional[Tuple[str, str]]' = None, group: 'Optional[str]' = None, wraps: 'Optional[str]' = None, optional: 'bool' = False) -> 'dataclasses.Field'",
+    "docstring": "Creates a dataclass field with attached protobuf metadata.",
+    "source_code": "def dataclass_field(\n    number: int,\n    proto_type: str,\n    *,\n    map_types: Optional[Tuple[str, str]] = None,\n    group: Optional[str] = None,\n    wraps: Optional[str] = None,\n    optional: bool = False,\n) -> dataclasses.Field:\n    \"\"\"Creates a dataclass field with attached protobuf metadata.\"\"\"\n    return dataclasses.field(\n        default=None if optional else PLACEHOLDER,\n        metadata={\n            \"betterproto\": FieldMetadata(\n                number, proto_type, map_types, group, wraps, optional\n            )\n        },\n    )\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.decode_varint",
+    "signature": "(buffer: 'bytes', pos: 'int') -> 'Tuple[int, int]'",
+    "docstring": "Decode a single varint value from a byte buffer. Returns the value and the\nnew position in the buffer.",
+    "source_code": "def decode_varint(buffer: bytes, pos: int) -> Tuple[int, int]:\n    \"\"\"\n    Decode a single varint value from a byte buffer. Returns the value and the\n    new position in the buffer.\n    \"\"\"\n    with BytesIO(buffer) as stream:\n        stream.seek(pos)\n        value, raw = load_varint(stream)\n    return value, pos + len(raw)\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.dump_varint",
+    "signature": "(value: 'int', stream: \"'SupportsWrite[bytes]'\") -> 'None'",
+    "docstring": "Encodes a single varint and dumps it into the provided stream.",
+    "source_code": "def dump_varint(value: int, stream: \"SupportsWrite[bytes]\") -> None:\n    \"\"\"Encodes a single varint and dumps it into the provided stream.\"\"\"\n    if value < -(1 << 63):\n        raise ValueError(\n            \"Negative value is not representable as a 64-bit integer - unable to encode a varint within 10 bytes.\"\n        )\n    elif value < 0:\n        value += 1 << 64\n\n    bits = value & 0x7F\n    value >>= 7\n    while value:\n        stream.write((0x80 | bits).to_bytes(1, \"little\"))\n        bits = value & 0x7F\n        value >>= 7\n    stream.write(bits.to_bytes(1, \"little\"))\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.encode_varint",
+    "signature": "(value: 'int') -> 'bytes'",
+    "docstring": "Encodes a single varint value for serialization.",
+    "source_code": "def encode_varint(value: int) -> bytes:\n    \"\"\"Encodes a single varint value for serialization.\"\"\"\n    with BytesIO() as stream:\n        dump_varint(value, stream)\n        return stream.getvalue()\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.load_varint",
+    "signature": "(stream: \"'SupportsRead[bytes]'\") -> 'Tuple[int, bytes]'",
+    "docstring": "Load a single varint value from a stream. Returns the value and the raw bytes read.",
+    "source_code": "def load_varint(stream: \"SupportsRead[bytes]\") -> Tuple[int, bytes]:\n    \"\"\"\n    Load a single varint value from a stream. Returns the value and the raw bytes read.\n    \"\"\"\n    result = 0\n    raw = b\"\"\n    for shift in count(0, 7):\n        if shift >= 64:\n            raise ValueError(\"Too many bytes when decoding varint.\")\n        b = stream.read(1)\n        if not b:\n            raise EOFError(\"Stream ended unexpectedly while attempting to load varint.\")\n        raw += b\n        b_int = int.from_bytes(b, byteorder=\"little\")\n        result |= (b_int & 0x7F) << shift\n        if not (b_int & 0x80):\n            return result, raw\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.size_varint",
+    "signature": "(value: 'int') -> 'int'",
+    "docstring": "Calculates the size in bytes that a value would take as a varint.",
+    "source_code": "def size_varint(value: int) -> int:\n    \"\"\"Calculates the size in bytes that a value would take as a varint.\"\"\"\n    if value < -(1 << 63):\n        raise ValueError(\n            \"Negative value is not representable as a 64-bit integer - unable to encode a varint within 10 bytes.\"\n        )\n    elif value < 0:\n        return 10\n    elif value == 0:\n        return 1\n    else:\n        return math.ceil(value.bit_length() / 7)\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.which_one_of",
+    "signature": "(message: 'Message', group_name: 'str') -> 'Tuple[str, Optional[Any]]'",
+    "docstring": "Return the name and value of a message's one-of field group.\n\nReturns\n--------\nTuple[:class:`str`, Any]\n    The field name and the value for that field.",
+    "source_code": "def which_one_of(message: Message, group_name: str) -> Tuple[str, Optional[Any]]:\n    \"\"\"\n    Return the name and value of a message's one-of field group.\n\n    Returns\n    --------\n    Tuple[:class:`str`, Any]\n        The field name and the value for that field.\n    \"\"\"\n    field_name = message._group_current.get(group_name)\n    if not field_name:\n        return \"\", None\n    return field_name, getattr(message, field_name)\n",
+    "methods": []
+  }
+]

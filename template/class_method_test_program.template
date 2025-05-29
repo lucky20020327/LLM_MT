@@ -1,0 +1,70 @@
+from openai import OpenAI
+
+{import_statements}
+
+def call_LLM(prompt, api_key, baseLLM="deepseek"):
+    if baseLLM == "deepseek":
+        client = OpenAI(
+            api_key=api_key,
+            base_url="https://api.deepseek.com",
+        )
+        model_name = "deepseek-chat"
+    response = client.chat.completions.create(
+        model=model_name,
+        messages=[
+            {{"role": "system", "content": "You are a helpful assistant."}},
+            {{"role": "user", "content": prompt}}
+        ],
+        temperature=0.2,
+    )
+    return response.choices[0].message.content.strip()
+
+def input_generator():
+    """
+    Generate init_params for the class object and method_params for the method call.
+    This function should yield a tuple of (init_params, method_params).
+    """
+{input_generator_code}
+    pass
+
+def get_followup_params(init_params, method_params):
+    """
+    Generate follow-up parameters based on the init_params and method_params.
+    This function should yield a dictionary of follow-up parameters using a certain metamorphic relation.
+    """
+{get_followup_params_code}
+    pass
+    
+def validate_MR_result(result, followup_result, {class_name}_var, followup_{class_name}_var):
+    """
+    Validate the result using metamorphic relations.
+    This function should check if the result and followup_result and the class instances are consistent with the metamorphic relations.
+    """
+{validate_MR_result_code}
+    pass
+
+def test_{method_name}():
+    """
+    Test case for {class_name}.{method_name}.
+    """
+
+    # Get the init_params and method_params
+    init_params, method_params = input_generator()
+    
+    # Initialize the class
+    {class_name}_var = {class_name}(**init_params)
+    # Call the method
+    result = {class_name}_var.{method_name}(**method_params)
+    
+    # Get the follow-up params
+    followup_init_params, followup_method_params = get_followup_params(init_params, method_params)
+    
+    # Initialize the class with followup params
+    followup_{class_name}_var = {class_name}(**followup_init_params)
+    # Call the method with followup params
+    followup_result = followup_{class_name}_var.{method_name}(**followup_method_params)
+    
+    # Validate the result using metamorphic relations
+    validate_MR_result(result, followup_result, {class_name}_var, followup_{class_name}_var)
+
+test_{method_name}()

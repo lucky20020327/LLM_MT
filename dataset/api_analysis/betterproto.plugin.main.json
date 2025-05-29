@@ -1,0 +1,10 @@
+[
+  {
+    "type": "function",
+    "name": "betterproto.plugin.main.dump_request",
+    "signature": "(dump_file: str, request: betterproto.lib.std.google.protobuf.compiler.CodeGeneratorRequest) -> None",
+    "docstring": "For developers: Supports running plugin.py standalone so its possible to debug it.\nRun protoc (or generate.py) with BETTERPROTO_DUMP=\"yourfile.bin\" to write the request to a file.\nThen run plugin.py from your IDE in debugging mode, and redirect stdin to the file.",
+    "source_code": "def dump_request(dump_file: str, request: CodeGeneratorRequest) -> None:\n    \"\"\"\n    For developers: Supports running plugin.py standalone so its possible to debug it.\n    Run protoc (or generate.py) with BETTERPROTO_DUMP=\"yourfile.bin\" to write the request to a file.\n    Then run plugin.py from your IDE in debugging mode, and redirect stdin to the file.\n    \"\"\"\n    with open(str(dump_file), \"wb\") as fh:\n        sys.stderr.write(f\"\\033[31mWriting input from protoc to: {dump_file}\\033[0m\\n\")\n        fh.write(request.SerializeToString())\n",
+    "methods": []
+  }
+]

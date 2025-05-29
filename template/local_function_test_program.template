@@ -1,0 +1,40 @@
+# metamorphic_relation
+"""
+{metamorphic_relation}
+"""
+
+# function source_code
+{function_source_code}
+
+# source_input_generator(k:int)
+{source_input_code}
+
+# followup_input_generator(source_input: dict)
+{followup_input_code}
+
+# validate_MR_result(source_result, followup_result)
+{validate_result_code}
+
+
+def test_{function_name}():
+    """
+    Test case for {function_name}.
+    """
+
+    # Get the source inputs
+    source_inputs = source_input_generator({input_count})
+
+    for source_input in source_inputs:
+        # Call the function with the source input
+        source_result = {function_name}(**source_input)
+
+        # Generate follow-up input parameters
+        followup_input = followup_input_generator(source_input)
+
+        # Call the function with the follow-up input
+        followup_result = {function_name}(**followup_input)
+
+        # Validate the results using metamorphic relations
+        validate_MR_result(source_result, followup_result)
+
+test_{function_name}()

@@ -1,0 +1,47 @@
+[
+  {
+    "type": "class",
+    "name": "betterproto.plugin.typing_compiler.DirectImportTypingCompiler",
+    "signature": "(_imports: Dict[str, Set[str]] = <factory>) -> None",
+    "docstring": "DirectImportTypingCompiler(_imports: Dict[str, Set[str]] = <factory>)",
+    "source_code": "@dataclass\nclass DirectImportTypingCompiler(TypingCompiler):\n    _imports: Dict[str, Set[str]] = field(default_factory=lambda: defaultdict(set))\n\n    def optional(self, type: str) -> str:\n        self._imports[\"typing\"].add(\"Optional\")\n        return f\"Optional[{type}]\"\n\n    def list(self, type: str) -> str:\n        self._imports[\"typing\"].add(\"List\")\n        return f\"List[{type}]\"\n\n    def dict(self, key: str, value: str) -> str:\n        self._imports[\"typing\"].add(\"Dict\")\n        return f\"Dict[{key}, {value}]\"\n\n    def union(self, *types: str) -> str:\n        self._imports[\"typing\"].add(\"Union\")\n        return f\"Union[{', '.join(types)}]\"\n\n    def iterable(self, type: str) -> str:\n        self._imports[\"typing\"].add(\"Iterable\")\n        return f\"Iterable[{type}]\"\n\n    def async_iterable(self, type: str) -> str:\n        self._imports[\"typing\"].add(\"AsyncIterable\")\n        return f\"AsyncIterable[{type}]\"\n\n    def async_iterator(self, type: str) -> str:\n        self._imports[\"typing\"].add(\"AsyncIterator\")\n        return f\"AsyncIterator[{type}]\"\n\n    def imports(self) -> Dict[str, Optional[Set[str]]]:\n        return {k: v if v else None for k, v in self._imports.items()}\n",
+    "methods": [
+      {
+        "name": "betterproto.plugin.typing_compiler.DirectImportTypingCompiler.imports",
+        "signature": "(self) -> Dict[str, Optional[Set[str]]]",
+        "docstring": "Returns either the direct import as a key with none as value, or a set of\nvalues to import from the key.",
+        "source_code": "    def imports(self) -> Dict[str, Optional[Set[str]]]:\n        return {k: v if v else None for k, v in self._imports.items()}\n"
+      }
+    ]
+  },
+  {
+    "type": "class",
+    "name": "betterproto.plugin.typing_compiler.NoTyping310TypingCompiler",
+    "signature": "(_imports: Dict[str, Set[str]] = <factory>) -> None",
+    "docstring": "NoTyping310TypingCompiler(_imports: Dict[str, Set[str]] = <factory>)",
+    "source_code": "@dataclass\nclass NoTyping310TypingCompiler(TypingCompiler):\n    _imports: Dict[str, Set[str]] = field(default_factory=lambda: defaultdict(set))\n\n    @staticmethod\n    def _fmt(type: str) -> str:  # for now this is necessary till 3.14\n        if type.startswith('\"'):\n            return type[1:-1]\n        return type\n\n    def optional(self, type: str) -> str:\n        return f'\"{self._fmt(type)} | None\"'\n\n    def list(self, type: str) -> str:\n        return f'\"list[{self._fmt(type)}]\"'\n\n    def dict(self, key: str, value: str) -> str:\n        return f'\"dict[{key}, {self._fmt(value)}]\"'\n\n    def union(self, *types: str) -> str:\n        return f'\"{\" | \".join(map(self._fmt, types))}\"'\n\n    def iterable(self, type: str) -> str:\n        self._imports[\"collections.abc\"].add(\"Iterable\")\n        return f'\"Iterable[{type}]\"'\n\n    def async_iterable(self, type: str) -> str:\n        self._imports[\"collections.abc\"].add(\"AsyncIterable\")\n        return f'\"AsyncIterable[{type}]\"'\n\n    def async_iterator(self, type: str) -> str:\n        self._imports[\"collections.abc\"].add(\"AsyncIterator\")\n        return f'\"AsyncIterator[{type}]\"'\n\n    def imports(self) -> Dict[str, Optional[Set[str]]]:\n        return {k: v if v else None for k, v in self._imports.items()}\n",
+    "methods": [
+      {
+        "name": "betterproto.plugin.typing_compiler.NoTyping310TypingCompiler.imports",
+        "signature": "(self) -> Dict[str, Optional[Set[str]]]",
+        "docstring": "Returns either the direct import as a key with none as value, or a set of\nvalues to import from the key.",
+        "source_code": "    def imports(self) -> Dict[str, Optional[Set[str]]]:\n        return {k: v if v else None for k, v in self._imports.items()}\n"
+      }
+    ]
+  },
+  {
+    "type": "class",
+    "name": "betterproto.plugin.typing_compiler.TypingImportTypingCompiler",
+    "signature": "(_imported: bool = False) -> None",
+    "docstring": "TypingImportTypingCompiler(_imported: bool = False)",
+    "source_code": "@dataclass\nclass TypingImportTypingCompiler(TypingCompiler):\n    _imported: bool = False\n\n    def optional(self, type: str) -> str:\n        self._imported = True\n        return f\"typing.Optional[{type}]\"\n\n    def list(self, type: str) -> str:\n        self._imported = True\n        return f\"typing.List[{type}]\"\n\n    def dict(self, key: str, value: str) -> str:\n        self._imported = True\n        return f\"typing.Dict[{key}, {value}]\"\n\n    def union(self, *types: str) -> str:\n        self._imported = True\n        return f\"typing.Union[{', '.join(types)}]\"\n\n    def iterable(self, type: str) -> str:\n        self._imported = True\n        return f\"typing.Iterable[{type}]\"\n\n    def async_iterable(self, type: str) -> str:\n        self._imported = True\n        return f\"typing.AsyncIterable[{type}]\"\n\n    def async_iterator(self, type: str) -> str:\n        self._imported = True\n        return f\"typing.AsyncIterator[{type}]\"\n\n    def imports(self) -> Dict[str, Optional[Set[str]]]:\n        if self._imported:\n            return {\"typing\": None}\n        return {}\n",
+    "methods": [
+      {
+        "name": "betterproto.plugin.typing_compiler.TypingImportTypingCompiler.imports",
+        "signature": "(self) -> Dict[str, Optional[Set[str]]]",
+        "docstring": "Returns either the direct import as a key with none as value, or a set of\nvalues to import from the key.",
+        "source_code": "    def imports(self) -> Dict[str, Optional[Set[str]]]:\n        if self._imported:\n            return {\"typing\": None}\n        return {}\n"
+      }
+    ]
+  }
+]

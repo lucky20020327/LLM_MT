@@ -1,0 +1,25 @@
+[
+  {
+    "type": "function",
+    "name": "typer.models.Default",
+    "signature": "(value: ~DefaultType) -> ~DefaultType",
+    "docstring": "You shouldn't use this function directly.\n\nIt's used internally to recognize when a default value has been overwritten, even\nif the new value is `None`.",
+    "source_code": "def Default(value: DefaultType) -> DefaultType:\n    \"\"\"\n    You shouldn't use this function directly.\n\n    It's used internally to recognize when a default value has been overwritten, even\n    if the new value is `None`.\n    \"\"\"\n    return DefaultPlaceholder(value)  # type: ignore\n",
+    "methods": []
+  },
+  {
+    "type": "class",
+    "name": "typer.models.TyperPath",
+    "signature": "(exists: bool = False, file_okay: bool = True, dir_okay: bool = True, writable: bool = False, readable: bool = True, resolve_path: bool = False, allow_dash: bool = False, path_type: Optional[Type[Any]] = None, executable: bool = False)",
+    "docstring": "The ``Path`` type is similar to the :class:`File` type, but\nreturns the filename instead of an open file. Various checks can be\nenabled to validate the type of file and permissions.\n\n:param exists: The file or directory needs to exist for the value to\n    be valid. If this is not set to ``True``, and the file does not\n    exist, then all further checks are silently skipped.\n:param file_okay: Allow a file as a value.\n:param dir_okay: Allow a directory as a value.\n:param readable: if true, a readable check is performed.\n:param writable: if true, a writable check is performed.\n:param executable: if true, an executable check is performed.\n:param resolve_path: Make the value absolute and resolve any\n    symlinks. A ``~`` is not expanded, as this is supposed to be\n    done by the shell only.\n:param allow_dash: Allow a single dash as a value, which indicates\n    a standard stream (but does not open it). Use\n    :func:`~click.open_file` to handle opening this value.\n:param path_type: Convert the incoming path value to this type. If\n    ``None``, keep Python's default, which is ``str``. Useful to\n    convert to :class:`pathlib.Path`.\n\n.. versionchanged:: 8.1\n    Added the ``executable`` parameter.\n\n.. versionchanged:: 8.0\n    Allow passing ``path_type=pathlib.Path``.\n\n.. versionchanged:: 6.0\n    Added the ``allow_dash`` parameter.",
+    "source_code": "class TyperPath(click.Path):\n    # Overwrite Click's behaviour to be compatible with Typer's autocompletion system\n    def shell_complete(\n        self, ctx: click.Context, param: click.Parameter, incomplete: str\n    ) -> List[click.shell_completion.CompletionItem]:\n        \"\"\"Return an empty list so that the autocompletion functionality\n        will work properly from the commandline.\n        \"\"\"\n        return []\n",
+    "methods": [
+      {
+        "name": "typer.models.TyperPath.shell_complete",
+        "signature": "(self, ctx: click.core.Context, param: click.core.Parameter, incomplete: str) -> List[click.shell_completion.CompletionItem]",
+        "docstring": "Return an empty list so that the autocompletion functionality\nwill work properly from the commandline.",
+        "source_code": "    def shell_complete(\n        self, ctx: click.Context, param: click.Parameter, incomplete: str\n    ) -> List[click.shell_completion.CompletionItem]:\n        \"\"\"Return an empty list so that the autocompletion functionality\n        will work properly from the commandline.\n        \"\"\"\n        return []\n"
+      }
+    ]
+  }
+]

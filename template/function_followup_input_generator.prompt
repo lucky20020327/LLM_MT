@@ -1,0 +1,39 @@
+Given the function `{function_name}` defined in the Python module `{module_name}`:
+
+```python
+def {function_name}{function_signature}:
+    \"\"\"
+    {function_docstring}
+    \"\"\"
+```
+
+Please write a generator function named `followup_input_generator` that takes a source input dictionary and returns a valid follow-up input parameter set that satisfies the specified metamorphic relations:
+
+{input_metamorphic_relation}
+
+The transformation from the source input to the follow-up input must follow the following steps:
+
+{input_transformation_steps}
+
+The generated follow-up inputs must also satisfy the following constraints:
+
+{input_constraints}
+
+The required function signature is:
+
+```followup_input_generator
+def followup_input_generator(source_input: dict):
+    \"\"\"
+    Generate a follow-up input parameter set for the `{function_name}` function based on a given source input, ensuring that the result satisfies the specified metamorphic relations:
+    {input_metamorphic_relation}
+
+    Parameters:
+        source_input (dict): A dictionary representing the original input parameters for `{function_name}`.
+
+    Returns:
+        dict: A dictionary representing a valid follow-up input parameter set for `{function_name}`.
+    \"\"\"
+```
+
+Please return a complete implementation with signature, docstring and function body.
+Please return your implementation enclosed in ```followup_input_generator and ```, so it can be easily parsed.

@@ -1,0 +1,42 @@
+[
+  {
+    "type": "function",
+    "name": "betterproto.casing.camel_case",
+    "signature": "(value: str, strict: bool = True) -> str",
+    "docstring": "Capitalize all words except first and remove symbols.\n\nParameters\n-----------\nvalue: :class:`str`\n    The value to convert.\nstrict: :class:`bool`\n    Whether or not to output only alphanumeric characters.\n\nReturns\n--------\n:class:`str`\n    The value in camelCase.",
+    "source_code": "def camel_case(value: str, strict: bool = True) -> str:\n    \"\"\"\n    Capitalize all words except first and remove symbols.\n\n    Parameters\n    -----------\n    value: :class:`str`\n        The value to convert.\n    strict: :class:`bool`\n        Whether or not to output only alphanumeric characters.\n\n    Returns\n    --------\n    :class:`str`\n        The value in camelCase.\n    \"\"\"\n    return lowercase_first(pascal_case(value, strict=strict))\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.casing.lowercase_first",
+    "signature": "(value: str) -> str",
+    "docstring": "Lower cases the first character of the value.\n\nParameters\n----------\nvalue: :class:`str`\n    The value to lower case.\n\nReturns\n-------\n:class:`str`\n    The lower cased string.",
+    "source_code": "def lowercase_first(value: str) -> str:\n    \"\"\"\n    Lower cases the first character of the value.\n\n    Parameters\n    ----------\n    value: :class:`str`\n        The value to lower case.\n\n    Returns\n    -------\n    :class:`str`\n        The lower cased string.\n    \"\"\"\n    return value[0:1].lower() + value[1:]\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.casing.pascal_case",
+    "signature": "(value: str, strict: bool = True) -> str",
+    "docstring": "Capitalize each word and remove symbols.\n\nParameters\n-----------\nvalue: :class:`str`\n    The value to convert.\nstrict: :class:`bool`\n    Whether or not to output only alphanumeric characters.\n\nReturns\n--------\n:class:`str`\n    The value in PascalCase.",
+    "source_code": "def pascal_case(value: str, strict: bool = True) -> str:\n    \"\"\"\n    Capitalize each word and remove symbols.\n\n    Parameters\n    -----------\n    value: :class:`str`\n        The value to convert.\n    strict: :class:`bool`\n        Whether or not to output only alphanumeric characters.\n\n    Returns\n    --------\n    :class:`str`\n        The value in PascalCase.\n    \"\"\"\n\n    def substitute_word(symbols, word):\n        if strict:\n            return word.capitalize()  # Remove all delimiters\n\n        if word.islower():\n            delimiter_length = len(symbols[:-1])  # Lose one delimiter\n        else:\n            delimiter_length = len(symbols)  # Preserve all delimiters\n\n        return (\"_\" * delimiter_length) + word.capitalize()\n\n    return re.sub(\n        f\"({SYMBOLS})({WORD_UPPER}|{WORD})\",\n        lambda groups: substitute_word(groups[1], groups[2]),\n        value,\n    )\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.casing.safe_snake_case",
+    "signature": "(value: str) -> str",
+    "docstring": "Snake case a value taking into account Python keywords.",
+    "source_code": "def safe_snake_case(value: str) -> str:\n    \"\"\"Snake case a value taking into account Python keywords.\"\"\"\n    value = snake_case(value)\n    value = sanitize_name(value)\n    return value\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.casing.snake_case",
+    "signature": "(value: str, strict: bool = True) -> str",
+    "docstring": "Join words with an underscore into lowercase and remove symbols.\n\nParameters\n-----------\nvalue: :class:`str`\n    The value to convert.\nstrict: :class:`bool`\n    Whether or not to force single underscores.\n\nReturns\n--------\n:class:`str`\n    The value in snake_case.",
+    "source_code": "def snake_case(value: str, strict: bool = True) -> str:\n    \"\"\"\n    Join words with an underscore into lowercase and remove symbols.\n\n    Parameters\n    -----------\n    value: :class:`str`\n        The value to convert.\n    strict: :class:`bool`\n        Whether or not to force single underscores.\n\n    Returns\n    --------\n    :class:`str`\n        The value in snake_case.\n    \"\"\"\n\n    def substitute_word(symbols: str, word: str, is_start: bool) -> str:\n        if not word:\n            return \"\"\n        if strict:\n            delimiter_count = 0 if is_start else 1  # Single underscore if strict.\n        elif is_start:\n            delimiter_count = len(symbols)\n        elif word.isupper() or word.islower():\n            delimiter_count = max(\n                1, len(symbols)\n            )  # Preserve all delimiters if not strict.\n        else:\n            delimiter_count = len(symbols) + 1  # Extra underscore for leading capital.\n\n        return (\"_\" * delimiter_count) + word.lower()\n\n    snake = re.sub(\n        f\"(^)?({SYMBOLS})({WORD_UPPER}|{WORD})\",\n        lambda groups: substitute_word(groups[2], groups[3], groups[1] is not None),\n        value,\n    )\n    return snake\n",
+    "methods": []
+  }
+]

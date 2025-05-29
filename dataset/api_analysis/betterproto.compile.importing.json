@@ -1,0 +1,58 @@
+[
+  {
+    "type": "function",
+    "name": "betterproto.compile.importing.get_type_reference",
+    "signature": "(*, package: 'str', imports: 'set', source_type: 'str', typing_compiler: 'TypingCompiler', unwrap: 'bool' = True, pydantic: 'bool' = False) -> 'str'",
+    "docstring": "Return a Python type name for a proto type reference. Adds the import if\nnecessary. Unwraps well known type if required.",
+    "source_code": "def get_type_reference(\n    *,\n    package: str,\n    imports: set,\n    source_type: str,\n    typing_compiler: TypingCompiler,\n    unwrap: bool = True,\n    pydantic: bool = False,\n) -> str:\n    \"\"\"\n    Return a Python type name for a proto type reference. Adds the import if\n    necessary. Unwraps well known type if required.\n    \"\"\"\n    if unwrap:\n        if source_type in WRAPPER_TYPES:\n            wrapped_type = type(WRAPPER_TYPES[source_type]().value)\n            return typing_compiler.optional(wrapped_type.__name__)\n\n        if source_type == \".google.protobuf.Duration\":\n            return \"timedelta\"\n\n        elif source_type == \".google.protobuf.Timestamp\":\n            return \"datetime\"\n\n    source_package, source_type = parse_source_type_name(source_type)\n\n    current_package: List[str] = package.split(\".\") if package else []\n    py_package: List[str] = source_package.split(\".\") if source_package else []\n    py_type: str = pythonize_class_name(source_type)\n\n    compiling_google_protobuf = current_package == [\"google\", \"protobuf\"]\n    importing_google_protobuf = py_package == [\"google\", \"protobuf\"]\n    if importing_google_protobuf and not compiling_google_protobuf:\n        py_package = (\n            [\"betterproto\", \"lib\"] + ([\"pydantic\"] if pydantic else []) + py_package\n        )\n\n    if py_package[:1] == [\"betterproto\"]:\n        return reference_absolute(imports, py_package, py_type)\n\n    if py_package == current_package:\n        return reference_sibling(py_type)\n\n    if py_package[: len(current_package)] == current_package:\n        return reference_descendent(current_package, imports, py_package, py_type)\n\n    if current_package[: len(py_package)] == py_package:\n        return reference_ancestor(current_package, imports, py_package, py_type)\n\n    return reference_cousin(current_package, imports, py_package, py_type)\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.compile.importing.parse_source_type_name",
+    "signature": "(field_type_name: 'str') -> 'Tuple[str, str]'",
+    "docstring": "Split full source type name into package and type name.\nE.g. 'root.package.Message' -> ('root.package', 'Message')\n     'root.Message.SomeEnum' -> ('root', 'Message.SomeEnum')",
+    "source_code": "def parse_source_type_name(field_type_name: str) -> Tuple[str, str]:\n    \"\"\"\n    Split full source type name into package and type name.\n    E.g. 'root.package.Message' -> ('root.package', 'Message')\n         'root.Message.SomeEnum' -> ('root', 'Message.SomeEnum')\n    \"\"\"\n    package_match = re.match(r\"^\\.?([^A-Z]+)\\.(.+)\", field_type_name)\n    if package_match:\n        package = package_match.group(1)\n        name = package_match.group(2)\n    else:\n        package = \"\"\n        name = field_type_name.lstrip(\".\")\n    return package, name\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.compile.importing.reference_absolute",
+    "signature": "(imports: 'Set[str]', py_package: 'List[str]', py_type: 'str') -> 'str'",
+    "docstring": "Returns a reference to a python type located in the root, i.e. sys.path.",
+    "source_code": "def reference_absolute(imports: Set[str], py_package: List[str], py_type: str) -> str:\n    \"\"\"\n    Returns a reference to a python type located in the root, i.e. sys.path.\n    \"\"\"\n    string_import = \".\".join(py_package)\n    string_alias = safe_snake_case(string_import)\n    imports.add(f\"import {string_import} as {string_alias}\")\n    return f'\"{string_alias}.{py_type}\"'\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.compile.importing.reference_ancestor",
+    "signature": "(current_package: 'List[str]', imports: 'Set[str]', py_package: 'List[str]', py_type: 'str') -> 'str'",
+    "docstring": "Returns a reference to a python type in a package which is an ancestor to the\ncurrent package, and adds the required import that is aliased (if possible) to avoid\nname conflicts.\n\nAdds trailing __ to avoid name mangling (python.org/dev/peps/pep-0008/#id34).",
+    "source_code": "def reference_ancestor(\n    current_package: List[str], imports: Set[str], py_package: List[str], py_type: str\n) -> str:\n    \"\"\"\n    Returns a reference to a python type in a package which is an ancestor to the\n    current package, and adds the required import that is aliased (if possible) to avoid\n    name conflicts.\n\n    Adds trailing __ to avoid name mangling (python.org/dev/peps/pep-0008/#id34).\n    \"\"\"\n    distance_up = len(current_package) - len(py_package)\n    if py_package:\n        string_import = py_package[-1]\n        string_alias = f\"_{'_' * distance_up}{string_import}__\"\n        string_from = f\"..{'.' * distance_up}\"\n        imports.add(f\"from {string_from} import {string_import} as {string_alias}\")\n        return f'\"{string_alias}.{py_type}\"'\n    else:\n        string_alias = f\"{'_' * distance_up}{py_type}__\"\n        imports.add(f\"from .{'.' * distance_up} import {py_type} as {string_alias}\")\n        return f'\"{string_alias}\"'\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.compile.importing.reference_cousin",
+    "signature": "(current_package: 'List[str]', imports: 'Set[str]', py_package: 'List[str]', py_type: 'str') -> 'str'",
+    "docstring": "Returns a reference to a python type in a package that is not descendent, ancestor\nor sibling, and adds the required import that is aliased to avoid name conflicts.",
+    "source_code": "def reference_cousin(\n    current_package: List[str], imports: Set[str], py_package: List[str], py_type: str\n) -> str:\n    \"\"\"\n    Returns a reference to a python type in a package that is not descendent, ancestor\n    or sibling, and adds the required import that is aliased to avoid name conflicts.\n    \"\"\"\n    shared_ancestry = os.path.commonprefix([current_package, py_package])  # type: ignore\n    distance_up = len(current_package) - len(shared_ancestry)\n    string_from = f\".{'.' * distance_up}\" + \".\".join(\n        py_package[len(shared_ancestry) : -1]\n    )\n    string_import = py_package[-1]\n    # Add trailing __ to avoid name mangling (python.org/dev/peps/pep-0008/#id34)\n    string_alias = (\n        f\"{'_' * distance_up}\"\n        + safe_snake_case(\".\".join(py_package[len(shared_ancestry) :]))\n        + \"__\"\n    )\n    imports.add(f\"from {string_from} import {string_import} as {string_alias}\")\n    return f'\"{string_alias}.{py_type}\"'\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.compile.importing.reference_descendent",
+    "signature": "(current_package: 'List[str]', imports: 'Set[str]', py_package: 'List[str]', py_type: 'str') -> 'str'",
+    "docstring": "Returns a reference to a python type in a package that is a descendent of the\ncurrent package, and adds the required import that is aliased to avoid name\nconflicts.",
+    "source_code": "def reference_descendent(\n    current_package: List[str], imports: Set[str], py_package: List[str], py_type: str\n) -> str:\n    \"\"\"\n    Returns a reference to a python type in a package that is a descendent of the\n    current package, and adds the required import that is aliased to avoid name\n    conflicts.\n    \"\"\"\n    importing_descendent = py_package[len(current_package) :]\n    string_from = \".\".join(importing_descendent[:-1])\n    string_import = importing_descendent[-1]\n    if string_from:\n        string_alias = \"_\".join(importing_descendent)\n        imports.add(f\"from .{string_from} import {string_import} as {string_alias}\")\n        return f'\"{string_alias}.{py_type}\"'\n    else:\n        imports.add(f\"from . import {string_import}\")\n        return f'\"{string_import}.{py_type}\"'\n",
+    "methods": []
+  },
+  {
+    "type": "function",
+    "name": "betterproto.compile.importing.reference_sibling",
+    "signature": "(py_type: 'str') -> 'str'",
+    "docstring": "Returns a reference to a python type within the same package as the current package.",
+    "source_code": "def reference_sibling(py_type: str) -> str:\n    \"\"\"\n    Returns a reference to a python type within the same package as the current package.\n    \"\"\"\n    return f'\"{py_type}\"'\n",
+    "methods": []
+  }
+]

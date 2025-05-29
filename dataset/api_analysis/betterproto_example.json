@@ -1,0 +1,10 @@
+[
+  {
+    "type": "function",
+    "name": "betterproto.decode_varint",
+    "signature": "(buffer: 'bytes', pos: 'int') -> 'Tuple[int, int]'",
+    "docstring": "Decode a single varint value from a byte buffer. Returns the value and the\nnew position in the buffer.",
+    "source_code": "def decode_varint(buffer: bytes, pos: int) -> Tuple[int, int]:\n    \"\"\"\n    Decode a single varint value from a byte buffer. Returns the value and the\n    new position in the buffer.\n    \"\"\"\n    with BytesIO(buffer) as stream:\n        stream.seek(pos)\n        value, raw = load_varint(stream)\n    return value, pos + len(raw)\n",
+    "methods": []
+  }
+]
