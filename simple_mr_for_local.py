@@ -410,13 +410,13 @@ def execute_test_program(test_program_file_path: str):
             logger.error(
                 f"Test program {test_program_file_path} failed with return code {result.returncode}"
             )
-            return False
+            return False, result.stderr.strip()
         logger.info(f"Test program {test_program_file_path} executed successfully.")
-        return True
+        return True, result.stdout.strip()
 
     except Exception as e:
         logger.warning(f"Error executing test program {test_program_file_path}: {e}")
-        return False
+        return False, str(e)
 
 
 def evaluate_mr(function_info: dict):
@@ -513,10 +513,12 @@ def evaluate_mr(function_info: dict):
             f"Writing original test program instance to {os.path.join(test_program_instance_folder, original_test_program_file_name)}"
         )
 
-        if not execute_test_program(
+        execute_result, execute_output = execute_test_program(
             os.path.join(test_program_instance_folder, original_test_program_file_name)
-        ):
+        )
+        if not execute_result:
             logger.error(f"Test program for original function failed.")
+            mr_evaluate_results[mr_id]["error_message"] = execute_output
             continue
         mr_evaluate_results[mr_id]["valid_mr"] = True
         # Now, we need to execute the test program on each mutant of the function
@@ -548,11 +550,13 @@ def evaluate_mr(function_info: dict):
                 f"Writing test program instance for mutation {mutation_name} to {os.path.join(test_program_instance_folder, test_program_instance_file_name)}"
             )
 
-            if execute_test_program(
+            # Execute the test program on the mutant and check if the metamorphic relation holds
+            execute_result, execute_output = execute_test_program(
                 os.path.join(
                     test_program_instance_folder, test_program_instance_file_name
                 )
-            ):
+            )
+            if not execute_result:
                 logger.error(f"Test program for mutation {mutation_name} passed.")
                 mr_evaluate_results[mr_id]["mutant_detection_results"][
                     mutation_name
@@ -590,7 +594,8 @@ if __name__ == "__main__":
     logger.add(
         sys.stderr,
         level="INFO",
-        format="{time} {level} {file}|{line}: {message}",
+        format="<green>{time}</green> <level>{level}</level> <cyan>{file}</cyan>|<magenta>{line}</magenta>: <level>{message}</level>",
+        colorize=True,
     )
 
     api_file = "/Users/lucky/work/ZJU/2025_04_23_metamorphic_testing/LLM_based_MT/dataset/humaneval/humaneval_mutated.json"
@@ -599,6 +604,8 @@ if __name__ == "__main__":
     logger.info(f"Loaded {len(api_infos)} API infos from {api_file}")
 
     for api_info in api_infos:
+        # if api_info["name"] != "humaneval.add_elements":
+        #     continue  # For testing, we only process the add_elements function.
         assert (
             api_info["type"] == "local_function"
         ), "Only local functions are supported in this script."
@@ -609,9 +616,12 @@ if __name__ == "__main__":
             logger.error(
                 f"Error generating test template for function {api_info['name']}: {e}"
             )
+            logger.debug(traceback.format_exc())
             continue
 
     for api_info in api_infos:
+        # if api_info["name"] != "humaneval.add_elements":
+        #     continue  # For testing, we only process the add_elements function.
         assert "mutations" in api_info, "Mutations field is missing in the API info."
         logger.info(
             f"Evaluating metamorphic relations for function: {api_info['name']}"
