@@ -96,6 +96,10 @@ def call_LLM(prompt, api_key, baseLLM="deepseek"):
             base_url="https://api.deepseek.com",
         )
         model_name = "deepseek-chat"
+    else:
+        raise NotImplementedError(
+            f"Base LLM {baseLLM} is not implemented. Please use 'deepseek'."
+        )
     response = client.chat.completions.create(
         model=model_name,
         messages=[
@@ -598,14 +602,12 @@ if __name__ == "__main__":
         colorize=True,
     )
 
-    api_file = "/Users/lucky/work/ZJU/2025_04_23_metamorphic_testing/LLM_based_MT/dataset/humaneval/humaneval_mutated.json"
-    api_infos = json.load(open(api_file, "r", encoding="utf-8"))
+    api_file = "/Users/lucky/work/ZJU/2025_04_23_metamorphic_testing/LLM_based_MT/dataset/bigcodebench/bigcodebench_mutated.json"
+    api_infos = json.load(open(api_file, "r", encoding="utf-8"))[:1]
 
     logger.info(f"Loaded {len(api_infos)} API infos from {api_file}")
 
     for api_info in api_infos:
-        # if api_info["name"] != "humaneval.add_elements":
-        #     continue  # For testing, we only process the add_elements function.
         assert (
             api_info["type"] == "local_function"
         ), "Only local functions are supported in this script."
@@ -620,8 +622,6 @@ if __name__ == "__main__":
             continue
 
     for api_info in api_infos:
-        # if api_info["name"] != "humaneval.add_elements":
-        #     continue  # For testing, we only process the add_elements function.
         assert "mutations" in api_info, "Mutations field is missing in the API info."
         logger.info(
             f"Evaluating metamorphic relations for function: {api_info['name']}"
