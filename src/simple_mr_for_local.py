@@ -11,12 +11,15 @@ from openai import OpenAI
 
 from utils.exec import execute_test_program
 from utils.llm import call_LLM
+from utils.extract_info import process_api
+
 from template import (
     function_mr_prompt,
     function_source_input_generator_prompt,
     function_followup_input_generator_prompt,
     function_valid_code_prompt,
     local_function_test_program_template,
+    function_deep_report_template,
 )
 from template.response_parser import (
     parse_mr_response,
@@ -49,6 +52,25 @@ def gen_MR_for_function(args: argparse.Namespace, function_info: dict):
     function_full_name = function_info["name"]
     function_signature = function_info["signature"]
     function_docstring = function_info["docstring"]
+    if args.func_deep_report:
+        process_api(function_info)
+        func_deep_report = function_info["deep_report"]
+        deep_report_prompt = function_deep_report_template.format(
+            control_flow=json.dumps(func_deep_report["control_flow"], indent=2),
+            parameter_relations=json.dumps(
+                func_deep_report["parameter_relations"], indent=2
+            ),
+            state_mutations=json.dumps(func_deep_report["state_mutations"], indent=2),
+            computational_properties=json.dumps(
+                func_deep_report["computational_properties"], indent=2
+            ),
+            parameter_sensitivity=json.dumps(
+                func_deep_report["parameter_sensitivity"], indent=2
+            ),
+            ast_summary="\n".join(func_deep_report["ast_summary"]),
+        )
+    else:
+        deep_report_prompt = ""
 
     function_name = function_full_name.split(".")[-1]
     module_name = ".".join(function_full_name.split(".")[:-1])
@@ -56,6 +78,7 @@ def gen_MR_for_function(args: argparse.Namespace, function_info: dict):
     mr_prompt = function_mr_prompt.format(
         function_name=function_name,
         module_name=module_name,
+        function_deep_report=deep_report_prompt,
         function_signature=function_signature,
         function_docstring=function_docstring,
     )
@@ -525,6 +548,12 @@ def arg_parser():
         required=True,
         help="Directory to save the generated test programs and metamorphic relations.",
     )
+    parser.add_argument(
+        "--func_deep_report",
+        action="store_true",
+        default=False,
+        help="Whether to generate a deep report for the tested api.",
+    )
     return parser
 
 
@@ -550,6 +579,7 @@ def logger_init(args: argparse.Namespace):
 if __name__ == "__main__":
 
     args = arg_parser().parse_args()
+    logger.info(f"Starting Simple MR for local functions with arguments: {args}")
 
     logger_init(args)
 

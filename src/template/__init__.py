@@ -2,6 +2,7 @@ import os
 
 _pwd = os.path.dirname(os.path.abspath(__file__))
 
+# prompt templates
 function_mr_prompt = open(
     os.path.join(_pwd, "function_mr.prompt"), "r", encoding="utf-8"
 ).read()
@@ -20,9 +21,17 @@ function_valid_code_prompt = open(
     "r",
     encoding="utf-8",
 ).read()
+
+# other templates
 # This is used for functions are not in a public package. So the source_code of the function is needed to be imported.
 local_function_test_program_template = open(
     os.path.join(_pwd, "local_function_test_program.template"),
+    "r",
+    encoding="utf-8",
+).read()
+
+function_deep_report_template = open(
+    os.path.join(_pwd, "function_deep_report.template"),
     "r",
     encoding="utf-8",
 ).read()
