@@ -1,0 +1,9 @@
+# log_base_dir is default to ../logs. You can ignore it to use the default value.
+python simple_mr_for_local.py \
+    --api_file <path_of_api_file> \
+    --baseLLM deepseek \
+    --api_key <api_key> \
+    --test_count_per_mr 10 \
+    --timeout 5 \
+    --log_base_dir <folder_of_log_files> \ 
+    --output_dir <folder_of_output_files> \

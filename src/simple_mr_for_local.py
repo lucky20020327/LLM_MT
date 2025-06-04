@@ -2,116 +2,33 @@ import os
 import json
 import datetime
 import sys
-import signal
 import traceback
 import subprocess
+import argparse
 
 from loguru import logger
 from openai import OpenAI
 
+from utils.exec import execute_test_program
+from utils.llm import call_LLM
+from template import (
+    function_mr_prompt,
+    function_source_input_generator_prompt,
+    function_followup_input_generator_prompt,
+    function_valid_code_prompt,
+    local_function_test_program_template,
+)
+from template.response_parser import (
+    parse_mr_response,
+    parse_function_response,
+)
+
+pwd = os.path.dirname(os.path.abspath(__file__))
 
 # TODO: Note that global variables in the test prefix are not taken into consideration now.
 
-function_source_input_generator_prompt = open(
-    "./template/function_source_input_generator.prompt", "r", encoding="utf-8"
-).read()
-function_followup_input_generator_prompt = open(
-    "./template/function_followup_input_generator.prompt", "r", encoding="utf-8"
-).read()
-function_valid_code_prompt = open(
-    "./template/function_valid_code.prompt", "r", encoding="utf-8"
-).read()
-function_mr_prompt = open("./template/function_mr.prompt", "r", encoding="utf-8").read()
-# This is used for functions are not in a public package. So the source_code of the function is needed to be imported.
-local_function_test_program_template = open(
-    "./template/local_function_test_program.template", "r", encoding="utf-8"
-).read()
 
-
-baseLLM = "deepseek"
-api_key = "sk-ca15c4d0bec041c0b118a2ec0f69d388"
-
-TEST_COUNT_PER_MR = 10
-
-
-# Define a timeout exception
-class TimeoutException(Exception):
-    pass
-
-
-# Define signal handler
-def handler(signum, frame):
-    raise TimeoutException("Execution timed out!")
-
-
-def parse_mr_response(response: str):
-    """
-    Parse the metamorphic relations from the response string.
-    The response is expected to be in JSON format.
-    """
-    identifier = "```mrs"
-    if "```mrs" not in response:
-        identifier = "```python"
-    try:
-        mr_list = response.split(identifier)[-1].split("```")[0].strip()
-        MRs = json.loads(mr_list)
-        if not isinstance(MRs, list):
-            raise ValueError("Metamorphic relations should be a list.")
-        return MRs
-    except json.JSONDecodeError as e:
-        logger.error(f"Failed to parse metamorphic relations: {e}")
-        logger.error(f"Response content: {response}")
-        raise ValueError("Failed to parse metamorphic relations from the response.")
-
-
-def parse_function_response(
-    response: str, identifier: str, target_function_signature: str
-):
-    """
-    Parse the function code from the response string.
-    The response is expected to contain a code block with the specified identifier.
-    """
-    if identifier not in response:
-        identifier = "```python"
-    try:
-        function_code = response.split(identifier)[-1].split("```")[0].strip()
-        if target_function_signature not in function_code:
-            logger.error(
-                f"Function signature '{target_function_signature}' not found in the response."
-            )
-            raise ValueError(
-                f"Function signature '{target_function_signature}' not found in the response."
-            )
-        return function_code
-    except Exception as e:
-        logger.error(f"Failed to parse function code: {e}")
-        logger.error(f"Response content: {response}")
-        raise ValueError("Failed to parse function code from the response.")
-
-
-def call_LLM(prompt, api_key, baseLLM="deepseek"):
-    if baseLLM == "deepseek":
-        client = OpenAI(
-            api_key=api_key,
-            base_url="https://api.deepseek.com",
-        )
-        model_name = "deepseek-chat"
-    else:
-        raise NotImplementedError(
-            f"Base LLM {baseLLM} is not implemented. Please use 'deepseek'."
-        )
-    response = client.chat.completions.create(
-        model=model_name,
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.2,
-    )
-    return response.choices[0].message.content.strip()
-
-
-def gen_MR_for_function(function_info: dict):
+def gen_MR_for_function(args: argparse.Namespace, function_info: dict):
     """
     Generate metamorphic relations for a function.
     This function should return a list of metamorphic relations that can be used to generate test cases.
@@ -144,7 +61,7 @@ def gen_MR_for_function(function_info: dict):
     )
 
     logger.debug(f"MR generator prompt: {mr_prompt}")
-    response = call_LLM(mr_prompt, baseLLM=baseLLM, api_key=api_key)
+    response = call_LLM(mr_prompt, baseLLM=args.baseLLM, api_key=args.api_key)
     logger.debug(f"Response from LLM: {response}")
 
     MRs = parse_mr_response(response)
@@ -155,7 +72,9 @@ def gen_MR_for_function(function_info: dict):
     return MRs
 
 
-def gen_source_input_for_function(mr: dict, function_info: dict):
+def gen_source_input_for_function(
+    args: argparse.Namespace, mr: dict, function_info: dict
+):
     """
     Generate source input generator for a function based on the given metamorphic relation and function information.
     This function should return a generator function as a string that can be used to generate source input.
@@ -182,7 +101,9 @@ def gen_source_input_for_function(mr: dict, function_info: dict):
     )
 
     logger.debug(f"Source input generator prompt: {source_input_generator_prompt}")
-    response = call_LLM(source_input_generator_prompt, baseLLM=baseLLM, api_key=api_key)
+    response = call_LLM(
+        source_input_generator_prompt, baseLLM=args.baseLLM, api_key=args.api_key
+    )
     logger.debug(f"Response from LLM: {response}")
 
     generator = parse_function_response(
@@ -194,7 +115,9 @@ def gen_source_input_for_function(mr: dict, function_info: dict):
     return generator
 
 
-def gen_followup_input_for_function(mr: dict, function_info: dict):
+def gen_followup_input_for_function(
+    args: argparse.Namespace, mr: dict, function_info: dict
+):
     """
     Generate follow-up input generator for a function based on the given metamorphic relation, function information, and source input.
     This function should return a generator function as a string that can be used to generate follow-up input.
@@ -224,7 +147,7 @@ def gen_followup_input_for_function(mr: dict, function_info: dict):
 
     logger.debug(f"Follow-up input generator prompt: {followup_input_generator_prompt}")
     response = call_LLM(
-        followup_input_generator_prompt, baseLLM=baseLLM, api_key=api_key
+        followup_input_generator_prompt, baseLLM=args.baseLLM, api_key=args.api_key
     )
     logger.debug(f"Response from LLM: {response}")
 
@@ -238,7 +161,9 @@ def gen_followup_input_for_function(mr: dict, function_info: dict):
     return generator
 
 
-def gen_valid_code_for_function(mr: dict, function_info: dict):
+def gen_valid_code_for_function(
+    args: argparse.Namespace, mr: dict, function_info: dict
+):
     logger.info(
         f"Generating valid code for function {function_info['name']} with metamorphic relation {mr['mr_input_relation']}"
     )
@@ -261,7 +186,7 @@ def gen_valid_code_for_function(mr: dict, function_info: dict):
     )
 
     logger.debug(f"Valid code prompt: {valid_code_prompt}")
-    response = call_LLM(valid_code_prompt, baseLLM=baseLLM, api_key=api_key)
+    response = call_LLM(valid_code_prompt, baseLLM=args.baseLLM, api_key=args.api_key)
     logger.debug(f"Response from LLM: {response}")
 
     valid_code = parse_function_response(
@@ -275,6 +200,7 @@ def gen_valid_code_for_function(mr: dict, function_info: dict):
 
 
 def test_program_construction_for_local_function(
+    args: argparse.Namespace,
     function_info: dict,
     mr: dict,
     source_input_generator: str,
@@ -303,7 +229,7 @@ def test_program_construction_for_local_function(
         followup_input_code=followup_input_generator,
         validate_result_code=valid_code,
         function_name=function_name,
-        input_count=TEST_COUNT_PER_MR,
+        input_count=args.test_count_per_mr,
     )
 
     logger.debug(f"Generated test program: {test_program}")
@@ -314,7 +240,7 @@ def test_program_construction_for_local_function(
     return test_program
 
 
-def gen_test_template_for_local_function(function_info: dict):
+def gen_test_template_for_local_function(args: argparse.Namespace, function_info: dict):
     """
     This function will build a test program template for the given local function using metamorphic relations.
     The template can be used to generate test program instances for mutants of the function by formatting {function_source_code}.
@@ -326,14 +252,15 @@ def gen_test_template_for_local_function(function_info: dict):
     # For example, the function from dataset humaneval is named as humaneval.<function_name>.
     module_name = ".".join(function_full_name.split(".")[:-1])
     test_program_template_folder = os.path.join(
-        ".",
-        "simple_output",
+        args.output_dir,
         "test_program_templates",
         module_name.replace(".", os.sep),
         f"test_{function_name}",
     )
     mr_folder = os.path.join(
-        ".", "simple_output", "metamorphic_relations", module_name.replace(".", os.sep)
+        args.output_dir,
+        "metamorphic_relations",
+        module_name.replace(".", os.sep),
     )
     os.makedirs(test_program_template_folder, exist_ok=True)
     os.makedirs(mr_folder, exist_ok=True)
@@ -353,7 +280,7 @@ def gen_test_template_for_local_function(function_info: dict):
             raise ValueError("Metamorphic relations should be a list.")
         logger.info(f"Loaded {len(MRs)} metamorphic relations from {mr_file_path}")
     else:
-        MRs = gen_MR_for_function(function_info)
+        MRs = gen_MR_for_function(args, function_info)
         logger.info(f"Writing metamorphic relations to {mr_file_path}")
         with open(mr_file_path, "w", encoding="utf-8") as f:
             json.dump(MRs, f, indent=4)
@@ -378,11 +305,12 @@ def gen_test_template_for_local_function(function_info: dict):
                     f"Test program template file {test_program_template_file_path} exists but does not contain the metamorphic relation. Overwriting."
                 )
 
-        source_input_code = gen_source_input_for_function(mr, function_info)
-        followup_input_code = gen_followup_input_for_function(mr, function_info)
-        valid_code = gen_valid_code_for_function(mr, function_info)
+        source_input_code = gen_source_input_for_function(args, mr, function_info)
+        followup_input_code = gen_followup_input_for_function(args, mr, function_info)
+        valid_code = gen_valid_code_for_function(args, mr, function_info)
 
         test_program = test_program_construction_for_local_function(
+            args,
             function_info,
             mr,
             source_input_code,
@@ -396,34 +324,7 @@ def gen_test_template_for_local_function(function_info: dict):
             f.write(test_program)
 
 
-def execute_test_program(test_program_file_path: str):
-    """
-    Execute the test program and return the result.
-    This function should handle any exceptions that occur during execution.
-    """
-    try:
-        # execute the test program using subprocess
-        logger.info(f"Executing test program {test_program_file_path}")
-        result = subprocess.run(
-            ["python", test_program_file_path],
-            capture_output=True,
-            text=True,
-            timeout=5,  # Set a timeout for the execution
-        )
-        if result.returncode != 0:
-            logger.error(
-                f"Test program {test_program_file_path} failed with return code {result.returncode}"
-            )
-            return False, result.stderr.strip()
-        logger.info(f"Test program {test_program_file_path} executed successfully.")
-        return True, result.stdout.strip()
-
-    except Exception as e:
-        logger.warning(f"Error executing test program {test_program_file_path}: {e}")
-        return False, str(e)
-
-
-def evaluate_mr(function_info: dict):
+def evaluate_mr(args: argparse.Namespace, function_info: dict):
     """
     Evaluate the metamorphic relations on a function and its mutants.
     This function should execute the test program and check if the metamorphic relations hold.
@@ -433,15 +334,14 @@ def evaluate_mr(function_info: dict):
     module_name = ".".join(function_full_name.split(".")[:-1])
 
     test_program_template_folder = os.path.join(
-        ".",
-        "simple_output",
+        args.output_dir,
         "test_program_templates",
         module_name.replace(".", os.sep),
         f"test_{function_name}",
     )
 
     mr_folder = os.path.join(
-        ".", "simple_output", "metamorphic_relations", module_name.replace(".", os.sep)
+        args.output_dir, "metamorphic_relations", module_name.replace(".", os.sep)
     )
 
     mr_file_name = f"{function_name}_mrs.json"
@@ -455,8 +355,7 @@ def evaluate_mr(function_info: dict):
 
     mr_evaluate_results = {}
     mr_evaluate_results_file_path = os.path.join(
-        ".",
-        "simple_output",
+        args.output_dir,
         "mr_evaluate_results",
         module_name.replace(".", os.sep),
         f"{function_name}_mr_evaluate_results.json",
@@ -488,8 +387,7 @@ def evaluate_mr(function_info: dict):
             )
 
         test_program_instance_folder = os.path.join(
-            ".",
-            "simple_output",
+            args.output_dir,
             "test_program_instances",
             module_name.replace(".", os.sep),
             f"test_{function_name}",
@@ -518,7 +416,8 @@ def evaluate_mr(function_info: dict):
         )
 
         execute_result, execute_output = execute_test_program(
-            os.path.join(test_program_instance_folder, original_test_program_file_name)
+            os.path.join(test_program_instance_folder, original_test_program_file_name),
+            args.timeout,
         )
         if not execute_result:
             logger.error(f"Test program for original function failed.")
@@ -558,7 +457,8 @@ def evaluate_mr(function_info: dict):
             execute_result, execute_output = execute_test_program(
                 os.path.join(
                     test_program_instance_folder, test_program_instance_file_name
-                )
+                ),
+                args.timeout,
             )
             if not execute_result:
                 logger.error(f"Test program for mutation {mutation_name} passed.")
@@ -581,15 +481,59 @@ def evaluate_mr(function_info: dict):
     )
 
 
-if __name__ == "__main__":
+def arg_parser():
+    parser = argparse.ArgumentParser(description="Simple MR for local functions.")
+    parser.add_argument(
+        "--api_file",
+        type=str,
+        required=True,
+        help="Path to the API info file.",
+    )
+    parser.add_argument(
+        "--baseLLM",
+        type=str,
+        required=True,
+        choices=["deepseek"],
+        help="Base LLM to use for generating metamorphic relations and test programs.",
+    )
+    parser.add_argument(
+        "--api_key",
+        type=str,
+        required=True,
+        help="API key for the LLM service.",
+    )
+    parser.add_argument(
+        "--test_count_per_mr",
+        type=int,
+        default=10,
+        help="Number of test cases to generate for each metamorphic relation.",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=5,
+        help="Timeout for executing the test program in seconds.",
+    )
+    parser.add_argument(
+        "--log_base_dir",
+        type=str,
+        default=os.path.join(pwd, "..", "logs", "simple_mr"),
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        required=True,
+        help="Directory to save the generated test programs and metamorphic relations.",
+    )
+    return parser
 
+
+def logger_init(args: argparse.Namespace):
     logger.remove()
     now_time_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     logger.add(
         os.path.join(
-            ".",
-            "logs",
-            "simple_mr",
+            args.log_base_dir,
             f"{now_time_str}.log",
         ),
         level="DEBUG",
@@ -602,18 +546,26 @@ if __name__ == "__main__":
         colorize=True,
     )
 
-    api_file = "/Users/lucky/work/ZJU/2025_04_23_metamorphic_testing/LLM_based_MT/dataset/bigcodebench/bigcodebench_mutated.json"
-    api_infos = json.load(open(api_file, "r", encoding="utf-8"))[:1]
+
+if __name__ == "__main__":
+
+    args = arg_parser().parse_args()
+
+    logger_init(args)
+
+    api_file = args.api_file
+    api_infos = json.load(open(api_file, "r", encoding="utf-8"))
 
     logger.info(f"Loaded {len(api_infos)} API infos from {api_file}")
 
+    # generate test program templates for local functions
     for api_info in api_infos:
         assert (
             api_info["type"] == "local_function"
         ), "Only local functions are supported in this script."
         logger.info(f"Processing local function: {api_info['name']}")
         try:
-            gen_test_template_for_local_function(api_info)
+            gen_test_template_for_local_function(args, api_info)
         except Exception as e:
             logger.error(
                 f"Error generating test template for function {api_info['name']}: {e}"
@@ -621,13 +573,14 @@ if __name__ == "__main__":
             logger.debug(traceback.format_exc())
             continue
 
+    # evaluate metamorphic relations for local functions
     for api_info in api_infos:
         assert "mutations" in api_info, "Mutations field is missing in the API info."
         logger.info(
             f"Evaluating metamorphic relations for function: {api_info['name']}"
         )
         try:
-            evaluate_mr(api_info)
+            evaluate_mr(args, api_info)
         except Exception as e:
             logger.error(
                 f"Error evaluating metamorphic relations for function {api_info['name']}: {e}"

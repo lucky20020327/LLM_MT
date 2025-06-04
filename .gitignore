@@ -1,0 +1,15 @@
+logs
+simple_output*
+tmp*
+**/tmp*
+**/*.sh
+**/*.db*
+**/*.csv
+**/*.crt
+**/*.key
+
+# Ignore all .json files
+**/*.json
+
+# But do NOT ignore any .json files inside the 'dataset/' folder
+!dataset/**/*.json
