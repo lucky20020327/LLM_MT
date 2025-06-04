@@ -26,7 +26,7 @@ function_test_program_template = open(
 
 
 baseLLM = "deepseek"
-api_key = "sk-ca15c4d0bec041c0b118a2ec0f69d388"
+api_key = 
 
 TEST_COUNT_PER_MR = 10
 
@@ -401,7 +401,7 @@ if __name__ == "__main__":
         format="{time} {level} {file}|{line}: {message}",
     )
 
-    api_file = "/Users/lucky/work/ZJU/2025_04_23_metamorphic_testing/LLM_based_MT/dataset/humaneval/humaneval_example.json"
+    api_file = 
     api_infos = json.load(open(api_file, "r", encoding="utf-8"))
 
     logger.info(f"Loaded {len(api_infos)} API infos from {api_file}")
