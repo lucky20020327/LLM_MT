@@ -1,5 +1,6 @@
 logs
 simple_output*
+output*
 **/*.sh
 **/*.db*
 **/*.csv
