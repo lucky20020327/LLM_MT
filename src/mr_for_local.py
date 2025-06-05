@@ -52,7 +52,7 @@ def gen_MR_for_function(args: argparse.Namespace, function_info: dict):
     function_full_name = function_info["name"]
     function_signature = function_info["signature"]
     function_docstring = function_info["docstring"]
-    if args.func_deep_report:
+    if args.strategy == "func_deep_report":
         process_api(function_info)
         func_deep_report = function_info["deep_report"]
         deep_report_prompt = function_deep_report_template.format(
@@ -69,8 +69,12 @@ def gen_MR_for_function(args: argparse.Namespace, function_info: dict):
             ),
             ast_summary="\n".join(func_deep_report["ast_summary"]),
         )
-    else:
+    elif args.strategy == "simple":
         deep_report_prompt = ""
+    else:
+        raise ValueError(
+            f"Unknown strategy {args.strategy}. Please use 'simple' or 'func_deep_report'."
+        )
 
     function_name = function_full_name.split(".")[-1]
     module_name = ".".join(function_full_name.split(".")[:-1])
@@ -78,7 +82,7 @@ def gen_MR_for_function(args: argparse.Namespace, function_info: dict):
     mr_prompt = function_mr_prompt.format(
         function_name=function_name,
         module_name=module_name,
-        function_deep_report=deep_report_prompt,
+        function_analysis=deep_report_prompt,
         function_signature=function_signature,
         function_docstring=function_docstring,
     )
@@ -276,12 +280,14 @@ def gen_test_template_for_local_function(args: argparse.Namespace, function_info
     module_name = ".".join(function_full_name.split(".")[:-1])
     test_program_template_folder = os.path.join(
         args.output_dir,
+        args.strategy,
         "test_program_templates",
         module_name.replace(".", os.sep),
         f"test_{function_name}",
     )
     mr_folder = os.path.join(
         args.output_dir,
+        args.strategy,
         "metamorphic_relations",
         module_name.replace(".", os.sep),
     )
@@ -358,13 +364,17 @@ def evaluate_mr(args: argparse.Namespace, function_info: dict):
 
     test_program_template_folder = os.path.join(
         args.output_dir,
+        args.strategy,
         "test_program_templates",
         module_name.replace(".", os.sep),
         f"test_{function_name}",
     )
 
     mr_folder = os.path.join(
-        args.output_dir, "metamorphic_relations", module_name.replace(".", os.sep)
+        args.output_dir,
+        args.strategy,
+        "metamorphic_relations",
+        module_name.replace(".", os.sep),
     )
 
     mr_file_name = f"{function_name}_mrs.json"
@@ -379,6 +389,7 @@ def evaluate_mr(args: argparse.Namespace, function_info: dict):
     mr_evaluate_results = {}
     mr_evaluate_results_file_path = os.path.join(
         args.output_dir,
+        args.strategy,
         "mr_evaluate_results",
         module_name.replace(".", os.sep),
         f"{function_name}_mr_evaluate_results.json",
@@ -413,6 +424,7 @@ def evaluate_mr(args: argparse.Namespace, function_info: dict):
 
         test_program_instance_folder = os.path.join(
             args.output_dir,
+            args.strategy,
             "test_program_instances",
             module_name.replace(".", os.sep),
             f"test_{function_name}",
@@ -554,10 +566,10 @@ def arg_parser():
         help="Directory to save the generated test programs and metamorphic relations.",
     )
     parser.add_argument(
-        "--func_deep_report",
-        action="store_true",
-        default=False,
-        help="Whether to generate a deep report for the tested api.",
+        "--strategy",
+        type=str,
+        default="simple",
+        choices=["simple", "func_deep_report"],
     )
     return parser
 
@@ -568,6 +580,8 @@ def logger_init(args: argparse.Namespace):
     logger.add(
         os.path.join(
             args.log_base_dir,
+            args.strategy,
+            "mr_for_local",
             f"{now_time_str}.log",
         ),
         level="DEBUG",

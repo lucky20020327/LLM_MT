@@ -28,6 +28,13 @@ def arg_parser():
         required=True,
         help="Directory to save the generated test programs and metamorphic relations.",
     )
+    parser.add_argument(
+        "--strategy",
+        type=str,
+        default="simple",
+        choices=["simple", "func_deep_report"],
+        help="Strategy for generating metamorphic relations.",
+    )
     return parser
 
 
@@ -42,6 +49,8 @@ if __name__ == "__main__":
     logger.add(
         os.path.join(
             args.log_base_dir,
+            args.strategy,
+            "statistic",
             f"{now_time_str}.log",
         ),
         level="DEBUG",
@@ -71,6 +80,7 @@ if __name__ == "__main__":
 
         mr_evaluate_results_file_path = os.path.join(
             args.output_dir,
+            args.strategy,
             "mr_evaluate_results",
             module_name.replace(".", os.sep),
             f"{function_name}_mr_evaluate_results.json",
@@ -122,6 +132,7 @@ if __name__ == "__main__":
     with open(
         os.path.join(
             args.output_dir,
+            args.strategy,
             "mr_evaluate_results",
             module_name.split(".")[0],  # the package name
             "mutant_detection_statistics.json",

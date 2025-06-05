@@ -7,7 +7,7 @@ def {function_name}{function_signature}:
     \"\"\"
 ```
 
-{function_deep_report}
+{function_analysis}
 
 Please analyze the functionality of the function and generate a list of **metamorphic relations** based on its behavior.
 

@@ -1,6 +1,11 @@
 # log_base_dir is default to ../logs. You can ignore it to use the default value.
-# If func_deep_report is set, the static analysis report of the api will be generated and used to generate MRs.
-python simple_mr_for_local.py \
+# the log files are stored at <log_base_dir>/<strategy>/mr_for_local/<time_str>.log
+
+# The output files are stored at <output_dir>/<strategy>/...
+
+# currently available strategy: simple, func_deep_report
+
+python mr_for_local.py \
     --api_file <path_of_api_file> \
     --baseLLM deepseek \
     --api_key <api_key> \
@@ -8,4 +13,4 @@ python simple_mr_for_local.py \
     --timeout 5 \
     --log_base_dir <folder_of_log_files> \ 
     --output_dir <folder_of_output_files> \
-    --func_deep_report \
+    --strategy <strategy> \

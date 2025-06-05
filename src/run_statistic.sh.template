@@ -1,6 +1,12 @@
 # log_base_dir is default to ../logs. You can ignore it to use the default value.
-# The output_dir is the output directory of simple_mr_for_local.py
+# the log files are stored at <log_base_dir>/<strategy>/statistic/<time_str>.log
+
+# The output_dir is the output directory of mr_for_local.py
+
+# currently available strategy: simple, func_deep_report
+
 python statistic.py \
     --api_file <api_file> \
     --log_base_dir <log_base_dir> \
     --output_dir <output_dir> \
+    --strategy <strategy> \
