@@ -21,6 +21,16 @@ def test_{function_name}():
     Test case for {function_name}.
     """
 
+    import os
+    # Remove the temporary directory if it exists
+    temp_dir = f"/tmp/{function_name}"
+    if os.path.exists(temp_dir):
+        import shutil
+        shutil.rmtree(temp_dir)
+    # Create the temporary directory
+    os.makedirs(temp_dir, exist_ok=True)
+
+
     # Get the source inputs
     source_inputs = source_input_generator({input_count})
 

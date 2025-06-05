@@ -18,6 +18,7 @@ And the specified metamorphic relations:
   {output_validation_steps}
 
 Please implement a function named `validate_MR_result` that checks whether the results of two calls to `{function_name}` (using source and follow-up inputs) satisfy the specified output metamorphic relations.
+Any file created in the process must be in the folder '/tmp/{function_name}'.
 
 The function signature should be:
 

@@ -18,6 +18,7 @@ The transformation from the source input to the follow-up input must follow the 
 The generated follow-up inputs must also satisfy the following constraints:
 
 {input_constraints}
+Any file created in the process must be in the folder '/tmp/{function_name}'.
 
 The required function signature is:
 

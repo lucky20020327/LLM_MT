@@ -10,6 +10,7 @@ def {function_name}{function_signature}:
 Please write a generator function named `source_input_generator` that yields valid input parameter sets required to call `{function_name}`. The generated inputs must satisfy the following constraints:
 
 {input_constraints}
+Any file created in the process must be in the folder '/tmp/{function_name}'.
 
 The required signature for the generator function is:
 
