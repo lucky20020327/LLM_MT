@@ -1,7 +1,5 @@
 logs
 simple_output*
-tmp*
-**/tmp*
 **/*.sh
 **/*.db*
 **/*.csv
@@ -11,6 +9,8 @@ tmp*
 
 # Ignore all .json files
 **/*.json
-
 # But do NOT ignore any .json files inside the 'dataset/' folder
 !dataset/**/*.json
+
+# Ignore all temporary files. This takes precedence over the JSON rule.
+**/tmp*
