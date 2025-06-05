@@ -394,6 +394,8 @@ def evaluate_mr(args: argparse.Namespace, function_info: dict):
             "mr": mr,
             "valid_mr": False,
             "mutant_detection_results": {},
+            "error_message": "",
+            "coverage_info": {},
         }
 
         test_program_template_file_name = f"test_{mr_id}.py.template"
@@ -438,15 +440,18 @@ def evaluate_mr(args: argparse.Namespace, function_info: dict):
             f"Writing original test program instance to {os.path.join(test_program_instance_folder, original_test_program_file_name)}"
         )
 
-        execute_result, execute_output = execute_test_program(
+        execute_result, execute_output, coverage_info = execute_test_program(
             os.path.join(test_program_instance_folder, original_test_program_file_name),
             args.timeout,
+            with_coverage=True,
+            function_name=function_name,
         )
         if not execute_result:
             logger.error(f"Test program for original function failed.")
             mr_evaluate_results[mr_id]["error_message"] = execute_output
             continue
         mr_evaluate_results[mr_id]["valid_mr"] = True
+        mr_evaluate_results[mr_id]["coverage_info"] = coverage_info
         # Now, we need to execute the test program on each mutant of the function
         if "mutations" not in function_info:
             logger.error(
@@ -477,7 +482,7 @@ def evaluate_mr(args: argparse.Namespace, function_info: dict):
             )
 
             # Execute the test program on the mutant and check if the metamorphic relation holds
-            execute_result, execute_output = execute_test_program(
+            execute_result, execute_output, _ = execute_test_program(
                 os.path.join(
                     test_program_instance_folder, test_program_instance_file_name
                 ),
