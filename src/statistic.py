@@ -65,16 +65,21 @@ def collect_coverage_data(mr_evaluate_results):
 
 
 def draw_coverage_boxplot(coverage_results, save_path=None):
+    assert coverage_results != [], "Coverage results cannot be empty"
+
     statement_percents = [res["statement"] for res in coverage_results]
     data_to_plot = [statement_percents]
     labels = ["Statement Coverage"]
     palette = ["#2ecc71"]
 
-    if len(coverage_results) > 0 and "branch" in coverage_results[0]:
-        branch_percents = [res["branch"] for res in coverage_results]
-        data_to_plot.append(branch_percents)
-        labels.append("Branch Coverage")
-        palette.append("#3498db")
+    branch_percents = []
+    for res in coverage_results:
+        if "branch" in res:
+            branch_percents.append(res["branch"])
+
+    data_to_plot.append(branch_percents)
+    labels.append("Branch Coverage")
+    palette.append("#3498db")
 
     plt.figure(figsize=(10, 6))
 
@@ -160,16 +165,16 @@ if __name__ == "__main__":
             total_mr_count += 1
 
         coverage_data = collect_coverage_data(mr_evalute_results)
-        coverage_plot_path = os.path.join(
-            args.output_dir,
-            args.strategy,
-            "box_plot",
-            module_name.replace(".", os.sep),
-            f"{function_name}.png",
-        )
+        # coverage_plot_path = os.path.join(
+        #     args.output_dir,
+        #     args.strategy,
+        #     "box_plot",
+        #     module_name.replace(".", os.sep),
+        #     f"{function_name}.png",
+        # )
         coverage_statistics.extend(coverage_data)
-        draw_coverage_boxplot(coverage_data, coverage_plot_path)
-        logger.info(f"Coverage visualization saved to {coverage_plot_path}")
+        # draw_coverage_boxplot(coverage_data, coverage_plot_path)
+        # logger.info(f"Coverage visualization saved to {coverage_plot_path}")
 
         for mutant in api_info["mutations"]:
             mutant_detection_statistics[mutant["name"]] = {
