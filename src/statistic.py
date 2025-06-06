@@ -39,6 +39,7 @@ def arg_parser():
     )
     return parser
 
+
 def collect_coverage_data(mr_evaluate_results):
     coverage_data = []
     for mr in mr_evaluate_results.values():
@@ -47,45 +48,51 @@ def collect_coverage_data(mr_evaluate_results):
             has_valid_branch = branch_total > 0
 
             if has_valid_branch:
-                coverage_data.append({
-                    "statement": mr["coverage_info"]["statement_coverage"]["percent"],
-                    "branch": mr["coverage_info"]["branch_coverage"]["percent"]
-                })
+                coverage_data.append(
+                    {
+                        "statement": mr["coverage_info"]["statement_coverage"][
+                            "percent"
+                        ],
+                        "branch": mr["coverage_info"]["branch_coverage"]["percent"],
+                    }
+                )
             else:
-                coverage_data.append({
-                    "statement": mr["coverage_info"]["statement_coverage"]["percent"]
-                })
+                coverage_data.append(
+                    {"statement": mr["coverage_info"]["statement_coverage"]["percent"]}
+                )
 
     return coverage_data
+
 
 def draw_coverage_boxplot(coverage_results, save_path=None):
     statement_percents = [res["statement"] for res in coverage_results]
     data_to_plot = [statement_percents]
-    labels = ['Statement Coverage']
+    labels = ["Statement Coverage"]
     palette = ["#2ecc71"]
 
     if len(coverage_results) > 0 and "branch" in coverage_results[0]:
         branch_percents = [res["branch"] for res in coverage_results]
         data_to_plot.append(branch_percents)
-        labels.append('Branch Coverage')
+        labels.append("Branch Coverage")
         palette.append("#3498db")
 
     plt.figure(figsize=(10, 6))
 
-    sns.boxplot(data=data_to_plot, 
-                palette=palette,
-                width=0.4)
-    
-    plt.title('Code Coverage Distribution', fontsize=14)
+    sns.boxplot(data=data_to_plot, palette=palette, width=0.4)
+
+    plt.title("Code Coverage Distribution", fontsize=14)
     plt.xticks(range(len(labels)), labels)
-    plt.ylabel('Coverage Percentage (%)')
+    plt.ylabel("Coverage Percentage (%)")
     plt.ylim(0, 110)
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        if not os.path.exists(os.path.dirname(save_path)):
+            os.makedirs(os.path.dirname(save_path))
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
         plt.close()
     else:
         plt.show()
+
 
 if __name__ == "__main__":
     args = arg_parser().parse_args()
@@ -120,12 +127,9 @@ if __name__ == "__main__":
     mutant_detected_count = 0
     total_mutant_count = 0
     mutant_detection_statistics = {}
+    coverage_statistics = []
 
-    coverage_plot_dir = os.path.join(
-        args.output_dir,
-        args.strategy,
-        "box_plot"
-    )
+    coverage_plot_dir = os.path.join(args.output_dir, args.strategy, "box_plot")
     os.makedirs(coverage_plot_dir, exist_ok=True)
 
     for api_info in api_infos:
@@ -160,8 +164,10 @@ if __name__ == "__main__":
             args.output_dir,
             args.strategy,
             "box_plot",
-            f"{function_name}.png"
+            module_name.replace(".", os.sep),
+            f"{function_name}.png",
         )
+        coverage_statistics.extend(coverage_data)
         draw_coverage_boxplot(coverage_data, coverage_plot_path)
         logger.info(f"Coverage visualization saved to {coverage_plot_path}")
 
@@ -201,7 +207,7 @@ if __name__ == "__main__":
             args.strategy,
             "mr_evaluate_results",
             module_name.split(".")[0],  # the package name
-            "mutant_detection_statistics.json",
+            "aaa_mutant_detection_statistics.json",
         ),
         "w",
         encoding="utf-8",
@@ -213,3 +219,15 @@ if __name__ == "__main__":
             ensure_ascii=False,
         )
     logger.info(f"Mutant detection statistics saved to {f.name}")
+
+    coverage_statistics_plot_path = os.path.join(
+        args.output_dir,
+        args.strategy,
+        "box_plot",
+        module_name.split(".")[0],  # the package name
+        "aaa_coverage_statistics.png",
+    )
+    draw_coverage_boxplot(coverage_statistics, coverage_statistics_plot_path)
+    logger.info(
+        f"Coverage statistics visualization saved to {coverage_statistics_plot_path}"
+    )
