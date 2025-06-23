@@ -296,6 +296,7 @@ def arg_parser():
         "--dataset",
         type=str,
         required=True,
+        choices=["humaneval", "bigcodebench", "rmcda"],
     )
     parser.add_argument(
         "--api_file",
