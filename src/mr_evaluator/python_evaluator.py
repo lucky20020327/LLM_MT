@@ -10,8 +10,8 @@ from typing import Optional, Dict, Any
 from loguru import logger
 
 pwd = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(pwd)
-from base_evaluator import BaseEvaluator
+sys.path.append(os.path.join(pwd, ".."))
+from mr_evaluator.base_evaluator import BaseEvaluator
 
 
 class PythonEvaluator(BaseEvaluator):

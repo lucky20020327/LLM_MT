@@ -4,7 +4,7 @@ import argparse
 import json
 
 _pwd = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(_pwd)
+sys.path.append(os.path.join(_pwd, ".."))
 
 from template.base_template_formatter import BaseFormatter
 

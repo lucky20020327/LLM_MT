@@ -5,9 +5,9 @@ import sys
 from loguru import logger
 
 _pwd = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(_pwd)
+sys.path.append(os.path.join(_pwd, ".."))
 
-from base_response_parser import BaseParser
+from template.base_response_parser import BaseParser
 
 
 class RParser(BaseParser):

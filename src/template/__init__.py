@@ -2,15 +2,15 @@ import os
 import sys
 
 _pwd = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(_pwd)
+sys.path.append(os.path.join(_pwd, ".."))
 
-from base_response_parser import BaseParser
-from python_response_parser import PythonParser
-from R_response_parser import RParser
+from template.base_response_parser import BaseParser
+from template.python_response_parser import PythonParser
+from template.R_response_parser import RParser
 
-from base_template_formatter import BaseFormatter
-from python_template_formatter import PythonFormatter
-from R_template_formatter import RFormatter
+from template.base_template_formatter import BaseFormatter
+from template.python_template_formatter import PythonFormatter
+from template.R_template_formatter import RFormatter
 
 parser_per_language = {
     "python": PythonParser(),

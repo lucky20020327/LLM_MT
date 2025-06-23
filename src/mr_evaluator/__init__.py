@@ -2,10 +2,10 @@ import os
 import sys
 
 _pwd = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(_pwd)
-from base_evaluator import BaseEvaluator
-from python_evaluator import PythonEvaluator
-from R_evaluator import REvaluator
+sys.path.append(os.path.join(_pwd, ".."))
+from mr_evaluator.base_evaluator import BaseEvaluator
+from mr_evaluator.python_evaluator import PythonEvaluator
+from mr_evaluator.R_evaluator import REvaluator
 
 evaluator_per_language = {
     "python": PythonEvaluator(),

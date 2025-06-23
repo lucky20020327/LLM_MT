@@ -2,9 +2,6 @@ from abc import ABC, abstractmethod
 import os
 import sys
 
-_pwd = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(_pwd)
-
 
 class BaseFormatter(ABC):
     """
