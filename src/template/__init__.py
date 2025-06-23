@@ -1,37 +1,45 @@
 import os
+import sys
 
 _pwd = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(_pwd)
 
-# prompt templates
-function_mr_prompt = open(
-    os.path.join(_pwd, "function_mr.prompt"), "r", encoding="utf-8"
-).read()
-function_source_input_generator_prompt = open(
-    os.path.join(_pwd, "function_source_input_generator.prompt"),
-    "r",
-    encoding="utf-8",
-).read()
-function_followup_input_generator_prompt = open(
-    os.path.join(_pwd, "function_followup_input_generator.prompt"),
-    "r",
-    encoding="utf-8",
-).read()
-function_valid_code_prompt = open(
-    os.path.join(_pwd, "function_valid_code.prompt"),
-    "r",
-    encoding="utf-8",
-).read()
+from base_response_parser import BaseParser
+from python_response_parser import PythonParser
 
-# other templates
-# This is used for functions are not in a public package. So the source_code of the function is needed to be imported.
-local_function_test_program_template = open(
-    os.path.join(_pwd, "local_function_test_program.template"),
-    "r",
-    encoding="utf-8",
-).read()
+from base_template_formatter import BaseFormatter
+from python_template_formatter import PythonFormatter
 
-function_deep_report_template = open(
-    os.path.join(_pwd, "function_deep_report.template"),
-    "r",
-    encoding="utf-8",
-).read()
+parser_per_language = {
+    "python": PythonParser(),
+    "R": None,
+}
+
+template_formatter_per_language = {
+    "python": PythonFormatter(),
+    "R": None,
+}
+
+
+# get template formatter based on language
+def get_prompt_template_formatter(language: str) -> BaseFormatter:
+    """
+    Get the prompt template formatter for the specified language.
+    Returns a dictionary with keys as prompt types and values as the template formatters.
+    """
+    if language not in template_formatter_per_language:
+        raise ValueError(f"Language '{language}' is not supported.")
+
+    return template_formatter_per_language[language]
+
+
+# get response parser based on language
+def get_parser(language: str) -> BaseParser:
+    """
+    Get the response parsers for the specified language.
+    Returns a tuple with the metamorphic relations parser and the function response parser.
+    """
+    if language not in parser_per_language:
+        raise ValueError(f"Language '{language}' is not supported.")
+
+    return parser_per_language[language]

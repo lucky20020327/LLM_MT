@@ -14,19 +14,17 @@ from utils.llm import call_LLM
 from utils.extract_info import process_api
 
 from template import (
-    function_mr_prompt,
-    function_source_input_generator_prompt,
-    function_followup_input_generator_prompt,
-    function_valid_code_prompt,
-    local_function_test_program_template,
-    function_deep_report_template,
-)
-from template.response_parser import (
-    parse_mr_response,
-    parse_function_response,
+    get_prompt_template_formatter,
+    get_parser,
+    BaseFormatter,
+    BaseParser,
 )
 
 pwd = os.path.dirname(os.path.abspath(__file__))
+
+# global variables for formatter and parser
+template_formatter: BaseFormatter = None
+response_parser: BaseParser = None
 
 # TODO: Note that global variables in the test prefix are not taken into consideration now.
 
@@ -49,49 +47,31 @@ def gen_MR_for_function(args: argparse.Namespace, function_info: dict):
         f"Generating metamorphic relations for function {function_info['name']}"
     )
 
-    function_full_name = function_info["name"]
-    function_signature = function_info["signature"]
-    function_docstring = function_info["docstring"]
     if args.strategy == "func_deep_report":
         process_api(function_info)
-        func_deep_report = function_info["deep_report"]
-        deep_report_prompt = function_deep_report_template.format(
-            control_flow=json.dumps(func_deep_report["control_flow"], indent=2),
-            parameter_relations=json.dumps(
-                func_deep_report["parameter_relations"], indent=2
-            ),
-            state_mutations=json.dumps(func_deep_report["state_mutations"], indent=2),
-            computational_properties=json.dumps(
-                func_deep_report["computational_properties"], indent=2
-            ),
-            parameter_sensitivity=json.dumps(
-                func_deep_report["parameter_sensitivity"], indent=2
-            ),
-            ast_summary="\n".join(func_deep_report["ast_summary"]),
+        function_analysis_report = (
+            template_formatter.function_deep_report_template_formatter(
+                args=args, function_info=function_info
+            )
         )
     elif args.strategy == "simple":
-        deep_report_prompt = ""
+        function_analysis_report = ""
     else:
         raise ValueError(
             f"Unknown strategy {args.strategy}. Please use 'simple' or 'func_deep_report'."
         )
 
-    function_name = function_full_name.split(".")[-1]
-    module_name = ".".join(function_full_name.split(".")[:-1])
-
-    mr_prompt = function_mr_prompt.format(
-        function_name=function_name,
-        module_name=module_name,
-        function_analysis=deep_report_prompt,
-        function_signature=function_signature,
-        function_docstring=function_docstring,
+    mr_prompt = template_formatter.function_mr_prompt_formatter(
+        args=args,
+        function_info=function_info,
+        function_analysis_report=function_analysis_report,
     )
 
     logger.debug(f"MR generator prompt: {mr_prompt}")
     response = call_LLM(mr_prompt, baseLLM=args.baseLLM, api_key=args.api_key)
     logger.debug(f"Response from LLM: {response}")
 
-    MRs = parse_mr_response(response)
+    MRs = response_parser.parse_response(response, target="mr")
 
     logger.info(
         f"Generated {len(MRs)} metamorphic relations for function {function_info['name']}"
@@ -110,21 +90,10 @@ def gen_source_input_for_function(
         f"Generating source input generator for function {function_info['name']} with metamorphic relation {mr['mr_input_relation']}"
     )
 
-    function_full_name = function_info["name"]
-    function_signature = function_info["signature"]
-    function_docstring = function_info["docstring"]
-
-    function_name = function_full_name.split(".")[-1]
-    module_name = ".".join(function_full_name.split(".")[:-1])
-
-    source_input_constraints = mr["source_input_constraints"]
-
-    source_input_generator_prompt = function_source_input_generator_prompt.format(
-        function_name=function_name,
-        module_name=module_name,
-        function_signature=function_signature,
-        function_docstring=function_docstring,
-        input_constraints=source_input_constraints,
+    source_input_generator_prompt = (
+        template_formatter.function_source_input_generator_prompt_formatter(
+            args=args, mr=mr, function_info=function_info
+        )
     )
 
     logger.debug(f"Source input generator prompt: {source_input_generator_prompt}")
@@ -133,10 +102,9 @@ def gen_source_input_for_function(
     )
     logger.debug(f"Response from LLM: {response}")
 
-    generator = parse_function_response(
+    generator = response_parser.parse_response(
         response,
-        identifier="```source_input_generator",
-        target_function_signature="def source_input_generator(k: int)",
+        target="source_input_generator",
     )
     logger.info(f"Generated source input generator: {generator}")
     return generator
@@ -152,24 +120,10 @@ def gen_followup_input_for_function(
     logger.info(
         f"Generating follow-up input generator for function {function_info['name']} with metamorphic relation {mr['mr_input_relation']}, {mr['mr_output_relation']}"
     )
-
-    function_full_name = function_info["name"]
-    function_signature = function_info["signature"]
-    function_docstring = function_info["docstring"]
-
-    function_name = function_full_name.split(".")[-1]
-    module_name = ".".join(function_full_name.split(".")[:-1])
-
-    followup_input_constraints = mr["followup_input_constraints"]
-
-    followup_input_generator_prompt = function_followup_input_generator_prompt.format(
-        function_name=function_name,
-        module_name=module_name,
-        function_signature=function_signature,
-        function_docstring=function_docstring,
-        input_metamorphic_relation=mr["mr_input_relation"],
-        input_transformation_steps=mr["mr_input_transformation_steps"],
-        input_constraints=followup_input_constraints,
+    followup_input_generator_prompt = (
+        template_formatter.function_followup_input_generator_prompt_formatter(
+            args=args, mr=mr, function_info=function_info
+        )
     )
 
     logger.debug(f"Follow-up input generator prompt: {followup_input_generator_prompt}")
@@ -178,10 +132,9 @@ def gen_followup_input_for_function(
     )
     logger.debug(f"Response from LLM: {response}")
 
-    generator = parse_function_response(
+    generator = response_parser.parse_response(
         response,
-        identifier="```followup_input_generator",
-        target_function_signature="def followup_input_generator(source_input: dict)",
+        target="followup_input_generator",
     )
     logger.info(f"Generated follow-up input generator: {generator}")
 
@@ -194,32 +147,17 @@ def gen_valid_code_for_function(
     logger.info(
         f"Generating valid code for function {function_info['name']} with metamorphic relation {mr['mr_input_relation']}"
     )
-    function_full_name = function_info["name"]
-    function_signature = function_info["signature"]
-    function_docstring = function_info["docstring"]
-
-    function_name = function_full_name.split(".")[-1]
-    module_name = ".".join(function_full_name.split(".")[:-1])
-
-    valid_code_prompt = function_valid_code_prompt.format(
-        function_name=function_name,
-        module_name=module_name,
-        function_signature=function_signature,
-        function_docstring=function_docstring,
-        input_metamorphic_relation=mr["mr_input_relation"],
-        input_transformation_steps=mr["mr_input_transformation_steps"],
-        output_metamorphic_relation=mr["mr_output_relation"],
-        output_validation_steps=mr["mr_output_validation_steps"],
+    valid_code_prompt = template_formatter.function_valid_code_prompt_formatter(
+        args=args, mr=mr, function_info=function_info
     )
 
     logger.debug(f"Valid code prompt: {valid_code_prompt}")
     response = call_LLM(valid_code_prompt, baseLLM=args.baseLLM, api_key=args.api_key)
     logger.debug(f"Response from LLM: {response}")
 
-    valid_code = parse_function_response(
+    valid_code = response_parser.parse_response(
         response,
-        identifier="```validate_MR_result",
-        target_function_signature="def validate_MR_result(source_input, followup_input, source_result, followup_result)",
+        target="validate_MR_result",
     )
 
     logger.info(f"Generated valid code: {valid_code}")
@@ -242,21 +180,13 @@ def test_program_construction_for_local_function(
         f"Constructing test program for local function {function_info['name']} with metamorphic relation {mr['mr_input_relation']}"
     )
 
-    mr_str = json.dumps(mr, indent=4)
-
-    function_full_name = function_info["name"]
-    function_source_code = function_info["source_code"]
-
-    function_name = function_full_name.split(".")[-1]
-
-    test_program = local_function_test_program_template.format(
-        metamorphic_relation=mr_str,
-        function_source_code=function_source_code,
-        source_input_code=source_input_generator,
-        followup_input_code=followup_input_generator,
-        validate_result_code=valid_code,
-        function_name=function_name,
-        input_count=args.test_count_per_mr,
+    test_program = template_formatter.local_function_test_program_template_formatter(
+        args=args,
+        function_info=function_info,
+        mr=mr,
+        source_input_generator=source_input_generator,
+        followup_input_generator=followup_input_generator,
+        valid_code=valid_code,
     )
 
     logger.debug(f"Generated test program: {test_program}")
@@ -595,12 +525,23 @@ def logger_init(args: argparse.Namespace):
     )
 
 
+# TODO: extend this function to support other languages in the future.
+def global_init(args: argparse.Namespace):
+    global template_formatter
+    global response_parser
+
+    # Load template_formatter and parsers
+    template_formatter = get_prompt_template_formatter("python")
+    response_parser = get_parser("python")
+
+
 if __name__ == "__main__":
 
     args = arg_parser().parse_args()
     logger.info(f"Starting Simple MR for local functions with arguments: {args}")
 
     logger_init(args)
+    global_init(args)
 
     api_file = args.api_file
     api_infos = json.load(open(api_file, "r", encoding="utf-8"))
