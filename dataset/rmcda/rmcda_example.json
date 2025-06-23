@@ -1,0 +1,12 @@
+[
+    {
+        "type": "local_function",
+        "package": "RMCDA",
+        "name": "apply.AHP",
+        "signature": "(A, comparing.competitors)",
+        "docstring": "Apply AHP on the matrices\n\nDescription:\n\n     Apply AHP on the matrices\n\nUsage:\n\n     apply.AHP(A, comparing.competitors)\n     \nArguments:\n\n       A: the matrix containing information related to pairwise\n          comparisons of criteria\n\ncomparing.competitors: the list of matrices related to pairwise\n          comparisons of competitors for each criteria\n\nValue:\n\n     a list containing I. The weight of each criteria II. The criteria\n     alternative unweighted matrix III. The weighted scores matrix IV.\n     Competitor final scores\n\nExamples:\n\n     data <- read.csv(system.file(\"extdata\", \"AHPinputfile.csv\", package = \"RMCDA\"), header=FALSE)\n     mat.lst <- read.csv.AHP.matrices(data)\n     mat.lst[[1]]->A\n     mat.lst[[2]]->comparing.competitors\n     results<- apply.AHP(A, comparing.competitors)\n     ",
+        "source_code": "apply.AHP <- function (A, comparing.competitors) \n{\n    criteria.weight <- RMCDA:::find.weight(A)\n    res.lst <- list()\n    criteria.alternatives.mat <- data.frame()\n    for (mat.no in 1:length(comparing.competitors)) {\n        res.lst[[mat.no]] <- RMCDA:::find.weight(comparing.competitors[[mat.no]])\n        criteria.alternatives.mat <- rbind(criteria.alternatives.mat, \n            res.lst[[mat.no]][[2]])\n    }\n    colnames(criteria.alternatives.mat) <- colnames(comparing.competitors[[1]])\n    rownames(criteria.alternatives.mat) <- colnames(A)\n    weighted.scores.mat <- t(t(criteria.alternatives.mat) * criteria.weight[[2]])\n    alternative.score <- colSums(criteria.alternatives.mat * \n        criteria.weight[[2]])\n    return(list(criteria.weight, criteria.alternatives.mat, weighted.scores.mat, \n        alternative.score))\n}",
+        "example_code": "data <- read.csv(system.file(\"extdata\", \"AHP_input_file.csv\", package = \"RMCDA\"), header=FALSE)\nmat.lst <- read.csv.AHP.matrices(data)\nmat.lst[[1]]->A\nmat.lst[[2]]->comparing.competitors\nresults<- apply.AHP(A, comparing.competitors)",
+        "mutations": []
+    }
+]

@@ -1,0 +1,56 @@
+Given the function `{function_name}` defined in the R package `{package_name}`:
+
+```R
+{function_name} <- {function_signature} {{
+{function_docstring}
+}}
+```
+
+And the specified metamorphic relations:
+
+* **Input Metamorphic Relation:**
+  {input_metamorphic_relation}
+  {input_transformation_steps}
+
+* **Output Metamorphic Relation:**
+  {output_metamorphic_relation}
+  {output_validation_steps}
+
+Please implement a function named `validate_MR_result` that checks whether the results of two calls to `{function_name}` (using source and follow-up inputs) satisfy the specified output metamorphic relations.
+Any file created in the process must be in the folder '/tmp/{function_name}'.
+
+The function signature should be:
+
+```validate_MR_result
+validate_MR_result <- function(source_input, followup_input, source_result, followup_result) {{
+#    Validate the results of two calls to the `{function_name}` function against the specified output metamorphic relations.
+
+#    Parameters:
+#        source_input: A dict of original input parameters used for the first call to `{function_name}` in the format:
+#            {{
+#                'param1': value1,
+#                'param2': value2,
+#                ...
+#            }}
+#        followup_input: A dict of modified input parameters used for the follow-up call to `{function_name}` in the format:
+#            {{
+#                'param1': modified_value1,
+#                'param2': modified_value2,
+#                ...
+#            }}
+#        source_result: The result from the first (source) call to `{function_name}`.
+#        followup_result: The result from the follow-up call to `{function_name}`.
+
+#    Raises:
+#        AssertionError: If the results do not satisfy the metamorphic relations.
+    
+    # Check if the results satisfy the output metamorphic relations
+    {{output_metamorphic_relation_check}}
+
+    # Additional checks can be added here as needed
+
+}}
+```
+
+Please return a complete implementation with the full function body.
+Make sure the implementation is enclosed in ```validate_MR_result and ```, so it can be easily parsed.

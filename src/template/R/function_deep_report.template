@@ -1,0 +1,27 @@
+Here is a deep static analysis report on this function:
+
+​1. ​Control Flow Analysis:
+{control_flow}
+​2. ​Parameter Relations:
+{parameter_relations}
+​​3. State Mutations:​​
+{state_mutations}
+​4. ​Computational Properties:​​
+{computational_properties}
+​​5. Parameter Sensitivity:
+{parameter_sensitivity}
+​​6. AST Summary:
+{ast_summary}
+
+
+Use the static analysis report to understand the function's key characteristics:
+- Control flow complexity (branches, loops)
+- Parameter interactions and dependencies
+- Mutation behaviors and side effects
+- Algebraic properties (commutative, associative, etc.)
+- Sensitive parameters and boundary conditions
+Generate MRs that leverage these insights:
+- For loops: consider permutations, removals, or modifications of elements
+- For branches: design inputs to trigger different execution paths
+- For sensitive parameters: test boundary conditions and edge cases
+- For computational properties: exploit symmetry, inversion, and scaling relationships

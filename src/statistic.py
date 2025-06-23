@@ -139,9 +139,9 @@ if __name__ == "__main__":
 
     for api_info in api_infos:
 
-        function_full_name = api_info["name"]
-        function_name = function_full_name.split(".")[-1]
-        module_name = ".".join(function_full_name.split(".")[:-1])
+        function_name = api_info["name"]
+        module_name = api_info["package"]
+        
 
         mr_evaluate_results_file_path = os.path.join(
             args.output_dir,

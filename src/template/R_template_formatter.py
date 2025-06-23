@@ -9,47 +9,46 @@ sys.path.append(_pwd)
 from template.base_template_formatter import BaseFormatter
 
 
-class PythonFormatter(BaseFormatter):
+class RFormatter(BaseFormatter):
     """
-    PythonFormatter is a class that formats various prompts and templates for Python language.
+    RFormatter is a class that formats various prompts and templates for R language.
     It inherits from BaseFormatter and implements methods to format prompts and templates
-    specific to Python programming tasks.
+    specific to R programming tasks.
     """
 
     def __init__(self):
         """
-        Initialize the PythonFormatter and load the templates.
+        Initialize the RFormatter and load the templates.
         """
-        self.load_template("python")
+        self.load_template("R")
 
     def function_followup_input_generator_prompt_formatter(
-        self,
-        args: argparse.Namespace,
-        mr: dict,
-        function_info: dict,
+        self, args: argparse.Namespace, mr: dict, function_info: dict
     ) -> str:
         """
         Format the template with the provided keyword arguments.
         """
 
+        package_name = function_info["package"]
         function_name = function_info["name"]
         function_signature = function_info["signature"]
         function_docstring = function_info["docstring"]
 
-        module_name = function_info["package"]
+        function_docstring_commented_out = "# " + function_docstring.replace(
+            "\n", "\n# "
+        )
 
         followup_input_constraints = mr["followup_input_constraints"]
 
-        followup_input_generator_prompt = (
-            self.function_followup_input_generator_prompt.format(
-                function_name=function_name,
-                module_name=module_name,
-                function_signature=function_signature,
-                function_docstring=function_docstring,
-                input_metamorphic_relation=mr["mr_input_relation"],
-                input_transformation_steps=mr["mr_input_transformation_steps"],
-                input_constraints=followup_input_constraints,
-            )
+        followup_input_generator_prompt = self.function_followup_input_generator_prompt.format(
+            function_name=function_name,
+            package_name=package_name,
+            function_signature=function_signature,
+            function_docstring=function_docstring_commented_out,
+            # make sure that the input_relation is a single line to avoid issues with R
+            input_metamorphic_relation=mr["mr_input_relation"].replace("\n", " "),
+            input_transformation_steps=mr["mr_input_transformation_steps"],
+            input_constraints=followup_input_constraints,
         )
 
         return followup_input_generator_prompt
@@ -63,20 +62,23 @@ class PythonFormatter(BaseFormatter):
         """
         Format the template with the provided keyword arguments.
         """
+        package_name = function_info["package"]
         function_name = function_info["name"]
         function_signature = function_info["signature"]
         function_docstring = function_info["docstring"]
 
-        module_name = function_info["package"]
+        function_docstring_commented_out = "# " + function_docstring.replace(
+            "\n", "\n# "
+        )
 
         source_input_constraints = mr["source_input_constraints"]
 
         source_input_generator_prompt = (
             self.function_source_input_generator_prompt.format(
                 function_name=function_name,
-                module_name=module_name,
+                package_name=package_name,
                 function_signature=function_signature,
-                function_docstring=function_docstring,
+                function_docstring=function_docstring_commented_out,
                 input_constraints=source_input_constraints,
             )
         )
@@ -92,18 +94,21 @@ class PythonFormatter(BaseFormatter):
         """
         Format the template with the provided keyword arguments.
         """
+        package_name = function_info["package"]
         function_name = function_info["name"]
         function_signature = function_info["signature"]
         function_docstring = function_info["docstring"]
 
-        module_name = function_info["package"]
+        function_docstring_commented_out = "# " + function_docstring.replace(
+            "\n", "\n# "
+        )
 
         mr_prompt = self.function_mr_prompt.format(
             function_name=function_name,
-            module_name=module_name,
+            package_name=package_name,
             function_analysis=function_analysis_report,
             function_signature=function_signature,
-            function_docstring=function_docstring,
+            function_docstring=function_docstring_commented_out,
         )
 
         return mr_prompt
@@ -117,17 +122,20 @@ class PythonFormatter(BaseFormatter):
         """
         Format the template with the provided keyword arguments.
         """
+        package_name = function_info["package"]
         function_name = function_info["name"]
         function_signature = function_info["signature"]
         function_docstring = function_info["docstring"]
 
-        module_name = function_info["package"]
+        function_docstring_commented_out = "# " + function_docstring.replace(
+            "\n", "\n# "
+        )
 
         valid_code_prompt = self.function_valid_code_prompt.format(
             function_name=function_name,
-            module_name=module_name,
+            package_name=package_name,
             function_signature=function_signature,
-            function_docstring=function_docstring,
+            function_docstring=function_docstring_commented_out,
             input_metamorphic_relation=mr["mr_input_relation"],
             input_transformation_steps=mr["mr_input_transformation_steps"],
             output_metamorphic_relation=mr["mr_output_relation"],
@@ -150,10 +158,12 @@ class PythonFormatter(BaseFormatter):
         """
         mr_str = json.dumps(mr, indent=4)
 
+        package_name = function_info["package"]
         function_name = function_info["name"]
 
         test_program = self.local_function_test_program_template.format(
             metamorphic_relation=mr_str,
+            package_name=package_name,
             source_input_code=source_input_generator,
             followup_input_code=followup_input_generator,
             validate_result_code=valid_code,

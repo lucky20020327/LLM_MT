@@ -6,6 +6,7 @@
 # currently available strategy: simple, func_deep_report
 
 python mr_for_local.py \
+    --dataset <dataset_name> \
     --api_file <path_of_api_file> \
     --baseLLM deepseek \
     --api_key <api_key> \
