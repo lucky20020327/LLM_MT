@@ -9,6 +9,8 @@ output*
 **/__pycache__
 **/.DS_Store
 
+dataset/api_anaysis/*
+
 # Ignore all .json files
 **/*.json
 # But do NOT ignore any .json files inside the 'dataset/' folder
