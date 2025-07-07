@@ -9,7 +9,7 @@ output*
 **/__pycache__
 **/.DS_Store
 
-dataset/api_anaysis/*
+dataset/api_analysis
 
 # Ignore all .json files
 **/*.json
