@@ -16,15 +16,15 @@ class PythonFormatter(BaseFormatter):
     specific to Python programming tasks.
     """
 
-    def __init__(self):
+    def __init__(self, args: argparse.Namespace):
         """
         Initialize the PythonFormatter and load the templates.
         """
+        super().__init__(args=args)
         self.load_template("python")
 
     def function_followup_input_generator_prompt_formatter(
         self,
-        args: argparse.Namespace,
         mr: dict,
         function_info: dict,
     ) -> str:
@@ -56,7 +56,6 @@ class PythonFormatter(BaseFormatter):
 
     def function_source_input_generator_prompt_formatter(
         self,
-        args: argparse.Namespace,
         mr: dict,
         function_info: dict,
     ) -> str:
@@ -85,7 +84,6 @@ class PythonFormatter(BaseFormatter):
 
     def function_mr_prompt_formatter(
         self,
-        args: argparse.Namespace,
         function_info: dict,
         function_analysis_report: str,
     ) -> str:
@@ -110,7 +108,6 @@ class PythonFormatter(BaseFormatter):
 
     def function_valid_code_prompt_formatter(
         self,
-        args: argparse.Namespace,
         mr: dict,
         function_info: dict,
     ) -> str:
@@ -138,7 +135,6 @@ class PythonFormatter(BaseFormatter):
 
     def local_function_test_program_template_formatter(
         self,
-        args: argparse.Namespace,
         function_info: dict,
         mr: dict,
         source_input_generator: str,
@@ -158,20 +154,39 @@ class PythonFormatter(BaseFormatter):
             followup_input_code=followup_input_generator,
             validate_result_code=valid_code,
             function_name=function_name,
-            input_count=args.test_count_per_mr,
+            input_count=self.args.test_count_per_mr,
         )
 
         return test_program
 
-    def function_test_program_template_formatter(self, **kwargs) -> str:
+    def function_test_program_template_formatter(
+        self,
+        function_info: dict,
+        mr: dict,
+        source_input_generator: str,
+        followup_input_generator: str,
+        valid_code: str,
+    ) -> str:
         """
         Format the template with the provided keyword arguments.
         """
-        raise NotImplementedError("Subclasses must implement the format method.")
+        mr_str = json.dumps(mr, indent=4)
+
+        function_name = function_info["name"]
+
+        test_program = self.function_test_program_template.format(
+            metamorphic_relation=mr_str,
+            source_input_code=source_input_generator,
+            followup_input_code=followup_input_generator,
+            validate_result_code=valid_code,
+            function_name=function_name,
+            input_count=self.args.test_count_per_mr,
+        )
+
+        return test_program
 
     def function_deep_report_template_formatter(
         self,
-        args: argparse.Namespace,
         function_info: dict,
     ) -> str:
         """

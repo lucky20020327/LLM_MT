@@ -10,6 +10,8 @@ from loguru import logger
 
 pwd = os.path.dirname(os.path.abspath(__file__))
 
+from utils.utils import get_sep_of_dataset
+
 
 def arg_parser():
     parser = argparse.ArgumentParser(description="Simple MR for local functions.")
@@ -141,13 +143,12 @@ if __name__ == "__main__":
 
         function_name = api_info["name"]
         module_name = api_info["package"]
-        
 
         mr_evaluate_results_file_path = os.path.join(
             args.output_dir,
             args.strategy,
             "mr_evaluate_results",
-            module_name.replace(".", os.sep),
+            module_name.replace(get_sep_of_dataset(args), os.sep),
             f"{function_name}_mr_evaluate_results.json",
         )
         try:
@@ -169,7 +170,7 @@ if __name__ == "__main__":
         #     args.output_dir,
         #     args.strategy,
         #     "box_plot",
-        #     module_name.replace(".", os.sep),
+        #     module_name.replace(get_sep_of_dataset(args), os.sep),
         #     f"{function_name}.png",
         # )
         coverage_statistics.extend(coverage_data)

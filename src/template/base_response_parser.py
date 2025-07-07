@@ -1,16 +1,16 @@
 from abc import ABC, abstractmethod
 import os
 import sys
-
+import argparse
 
 
 class BaseParser(ABC):
     """
     Base class for response parsers.
-    
+
     This class defines the interface for parsing responses from LLMs.
     It provides a method to parse the response based on the target type, which can be:
-    
+
     - source_input_generator: to parse the source input generator function.
     - followup_input_generator: to parse the followup input generator function.
     - validate_MR_result: to parse the validation of metamorphic relations result.
@@ -19,11 +19,11 @@ class BaseParser(ABC):
     The actual parsing logic for each target type should be correspondingly implemented to the concrete prompts.
     """
 
-    def __init__(self):
+    def __init__(self, args: argparse.Namespace):
         """
         Initialize the parser.
         """
-        pass
+        self.args = args
 
     def parse_response(self, response: str, target: str) -> str:
         """

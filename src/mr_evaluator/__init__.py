@@ -1,31 +1,27 @@
 import os
 import sys
+import argparse
+
 
 _pwd = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(_pwd, ".."))
+
 from mr_evaluator.base_evaluator import BaseEvaluator
 from mr_evaluator.python_evaluator import PythonEvaluator
 from mr_evaluator.R_evaluator import REvaluator
 
-evaluator_per_language = {
-    "python": PythonEvaluator(),
-    "R": REvaluator(),
-}
+from utils.utils import PYTHON_DATASETS, R_DATASETS
 
 
-def get_evaluator(dataset: str) -> BaseEvaluator:
+def get_evaluator(args: argparse.Namespace) -> BaseEvaluator:
     """
     Get the evaluator for the specified language.
     Returns an instance of BaseEvaluator or its subclass.
     """
-    if dataset in ["humaneval", "bigcodebench"]:
-        language = "python"
-    elif dataset in ["rmcda"]:
-        language = "R"
+    if args.dataset in PYTHON_DATASETS:
+        return PythonEvaluator(args)
+    elif args.dataset in R_DATASETS:
+        return REvaluator(args)
     else:
-        raise ValueError(f"Dataset '{dataset}' is not supported.")
+        raise ValueError(f"Dataset '{args.dataset}' is not supported.")
 
-    if language not in evaluator_per_language:
-        raise ValueError(f"Language '{language}' is not supported.")
-
-    return evaluator_per_language[language]

@@ -2,18 +2,19 @@ from abc import ABC, abstractmethod
 import os
 import sys
 
+import argparse
+
 
 class BaseFormatter(ABC):
     """
     Base class for tmplate/prompt formatters of different languages.
     """
 
-    @abstractmethod
-    def __init__(self):
+    def __init__(self, args: argparse.Namespace):
         """
         Initialize the formatter and load the templates.
         """
-        raise NotImplementedError("Subclasses must implement the __init__ method.")
+        self.args = args
 
     def load_template(self, language: str):
         _pwd = os.path.dirname(os.path.abspath(__file__))

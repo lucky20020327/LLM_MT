@@ -1,17 +1,19 @@
-import argparse
 import json
 import os
 import sys
 import tempfile
 import subprocess
 import inspect
+import argparse
+
 from typing import Optional, Dict, Any
 
 from loguru import logger
 
+pwd = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(pwd, ".."))
 
 from mr_evaluator.base_evaluator import BaseEvaluator
-from utils.utils import get_suffix_of_dataset
 
 
 class PythonEvaluator(BaseEvaluator):
@@ -19,6 +21,13 @@ class PythonEvaluator(BaseEvaluator):
     PythonEvaluator is a class that evaluates metamorphic relations (MRs) for Python functions.
     It executes test programs generated from MRs and get the evaluation metrics for the MRs.
     """
+    
+    def __init__(self, args: argparse.Namespace):
+        """
+        Initialize the PythonEvaluator with the provided arguments.
+        """
+        super().__init__(args)
+        logger.info("PythonEvaluator initialized.")
 
     def _run_coverage_on_script(
         self, script_path: str, timeout: int = 5

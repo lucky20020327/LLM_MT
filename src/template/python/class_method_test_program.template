@@ -1,10 +1,9 @@
+{import_statements}
+
 # metamorphic_relation
 """
 {metamorphic_relation}
 """
-
-# function source_code
-{{function_source_code}}
 
 # source_input_generator(k:int)
 {source_input_code}
@@ -21,28 +20,18 @@ def test_{function_name}():
     Test case for {function_name}.
     """
 
-    import os
-    # Remove the temporary directory if it exists
-    temp_dir = f"/tmp/{function_name}"
-    if os.path.exists(temp_dir):
-        import shutil
-        shutil.rmtree(temp_dir)
-    # Create the temporary directory
-    os.makedirs(temp_dir, exist_ok=True)
-
-
     # Get the source inputs
     source_inputs = source_input_generator({input_count})
 
     for source_input in source_inputs:
         # Call the function with the source input
-        source_result = my_{function_name}(**source_input)
+        source_result = {function_name}(**source_input)
 
         # Generate follow-up input parameters
         followup_input = followup_input_generator(source_input)
 
         # Call the function with the follow-up input
-        followup_result = my_{function_name}(**followup_input)
+        followup_result = {function_name}(**followup_input)
 
         # Validate the results using metamorphic relations
         validate_MR_result(source_input, followup_input, source_result, followup_result)

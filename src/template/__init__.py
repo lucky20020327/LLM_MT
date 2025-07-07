@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 
 _pwd = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(_pwd, ".."))
@@ -12,50 +13,33 @@ from template.base_template_formatter import BaseFormatter
 from template.python_template_formatter import PythonFormatter
 from template.R_template_formatter import RFormatter
 
-parser_per_language = {
-    "python": PythonParser(),
-    "R": RParser(),
-}
-
-template_formatter_per_language = {
-    "python": PythonFormatter(),
-    "R": RFormatter(),
-}
-
+from utils.utils import PYTHON_DATASETS, R_DATASETS
 
 # get template formatter based on language
-def get_prompt_template_formatter(dataset: str) -> BaseFormatter:
+def get_prompt_template_formatter(args: argparse.Namespace) -> BaseFormatter:
     """
     Get the prompt template formatter for the specified language.
     Returns a dictionary with keys as prompt types and values as the template formatters.
     """
-    if dataset in ["humaneval", "bigcodebench"]:
-        language = "python"
-    elif dataset in ["rmcda"]:
-        language = "R"
+    if args.dataset in PYTHON_DATASETS:
+        return PythonFormatter(args=args)
+    elif args.dataset in R_DATASETS:
+        return RFormatter(args=args)
     else:
-        raise ValueError(f"Dataset '{dataset}' is not supported.")
+        raise ValueError(f"Dataset '{args.dataset}' is not supported.")
 
-    if language not in template_formatter_per_language:
-        raise ValueError(f"Language '{language}' is not supported.")
-
-    return template_formatter_per_language[language]
 
 
 # get response parser based on language
-def get_parser(dataset: str) -> BaseParser:
+def get_parser(args: argparse.Namespace) -> BaseParser:
     """
     Get the response parsers for the specified language.
     Returns a tuple with the metamorphic relations parser and the function response parser.
     """
-    if dataset in ["humaneval", "bigcodebench"]:
-        language = "python"
-    elif dataset in ["rmcda"]:
-        language = "R"
+    if args.dataset in PYTHON_DATASETS:
+        return PythonParser(args=args)
+    elif args.dataset in R_DATASETS:
+        return RParser(args=args)
     else:
-        raise ValueError(f"Dataset '{dataset}' is not supported.")
+        raise ValueError(f"Dataset '{args.dataset}' is not supported.")
 
-    if language not in parser_per_language:
-        raise ValueError(f"Language '{language}' is not supported.")
-
-    return parser_per_language[language]

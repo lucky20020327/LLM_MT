@@ -1,10 +1,5 @@
-import argparse
-import json
 import os
 import sys
-import tempfile
-import subprocess
-import inspect
 from typing import Optional, Dict, Any
 
 from loguru import logger
@@ -13,7 +8,6 @@ pwd = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.join(pwd, ".."))
 
 from mr_evaluator.base_evaluator import BaseEvaluator
-from utils.utils import get_suffix_of_dataset
 
 
 

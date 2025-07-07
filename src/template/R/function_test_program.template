@@ -1,1 +1,52 @@
-None
+# metamorphic_relation
+# """
+# {metamorphic_relation}
+# """
+
+# Load the testthat library for assertions
+library(testthat)
+library({package_name})
+
+# function source_code
+{{function_source_code}}
+
+# source_input_generator(k)
+{source_input_code}
+
+# followup_input_generator(source_input)
+{followup_input_code}
+
+# validate_MR_result(source_input, followup_input, source_result, followup_result)
+{validate_result_code}
+
+
+test_that("Test case for {function_name}", {{
+  # Create a temporary directory for test artifacts
+  temp_dir <- file.path("/tmp/{function_name}")
+  if (dir.exists(temp_dir)) {{
+    unlink(temp_dir, recursive = TRUE)
+  }}
+  dir.create(temp_dir, showWarnings = FALSE)
+
+  # Ensure the temporary directory is removed when the test completes
+  on.exit(unlink(temp_dir, recursive = TRUE))
+
+  # Get the source inputs
+  source_inputs <- source_input_generator({input_count})
+
+  # Loop through each source input
+  for (source_input in source_inputs) {{
+    # Call the function with the source input
+    # do.call is used to pass the list of arguments to the function
+    source_result <- do.call(my_{function_name}, source_input)
+
+    # Generate follow-up input parameters
+    followup_input <- followup_input_generator(source_input)
+
+    # Call the function with the follow-up input
+    followup_result <- do.call(my_{function_name}, followup_input)
+
+    # Validate the results using metamorphic relations
+    validate_MR_result(source_input, followup_input, source_result, followup_result)
+  }}
+}})
