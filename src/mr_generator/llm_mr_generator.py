@@ -33,7 +33,7 @@ class LLM_MR_Generator(BaseGenerator):
         self.template_formatter = get_prompt_template_formatter(args)
         self.response_parser = get_parser(args)
 
-    def gen_MR_for_function(self, function_info: dict):
+    def gen_MR(self, function_info: dict):
         """
         Generate metamorphic relations for a function.
         This function should return a list of metamorphic relations that can be used to generate test cases.
@@ -51,21 +51,23 @@ class LLM_MR_Generator(BaseGenerator):
             f"Generating metamorphic relations for function {function_info['name']}"
         )
 
-        if self.args.strategy == "func_deep_report":
-            process_api(function_info)
-            function_analysis_report = (
-                self.template_formatter.function_deep_report_template_formatter(
-                    function_info=function_info
-                )
-            )
-        elif self.args.strategy == "simple":
+        ## TODO: currently only simple strategy is supported.
+        # if self.args.strategy == "func_deep_report":
+        #     process_api(function_info)
+        #     function_analysis_report = (
+        #         self.template_formatter.function_deep_report_template_formatter(
+        #             function_info=function_info
+        #         )
+        #     )
+        # elif self.args.strategy == "simple":
+        if self.args.strategy == "simple":
             function_analysis_report = ""
         else:
             raise ValueError(
                 f"Unknown strategy {self.args.strategy}. Please use 'simple' or 'func_deep_report'."
             )
 
-        mr_prompt = self.template_formatter.function_mr_prompt_formatter(
+        mr_prompt = self.template_formatter.mr_prompt_formatter(
             function_info=function_info,
             function_analysis_report=function_analysis_report,
         )
@@ -83,7 +85,7 @@ class LLM_MR_Generator(BaseGenerator):
         )
         return MRs
 
-    def gen_source_input_for_function(self, mr: dict, function_info: dict):
+    def gen_source_input_generator(self, mr: dict, function_info: dict):
         """
         Generate source input generator for a function based on the given metamorphic relation and function information.
         This function should return a generator function as a string that can be used to generate source input.
@@ -93,7 +95,7 @@ class LLM_MR_Generator(BaseGenerator):
         )
 
         source_input_generator_prompt = (
-            self.template_formatter.function_source_input_generator_prompt_formatter(
+            self.template_formatter.source_input_generator_prompt_formatter(
                 mr=mr, function_info=function_info
             )
         )
@@ -113,7 +115,7 @@ class LLM_MR_Generator(BaseGenerator):
         logger.info(f"Generated source input generator: {generator}")
         return generator
 
-    def gen_followup_input_for_function(self, mr: dict, function_info: dict):
+    def gen_followup_input_generator(self, mr: dict, function_info: dict):
         """
         Generate follow-up input generator for a function based on the given metamorphic relation, function information, and source input.
         This function should return a generator function as a string that can be used to generate follow-up input.
@@ -122,7 +124,7 @@ class LLM_MR_Generator(BaseGenerator):
             f"Generating follow-up input generator for function {function_info['name']} with metamorphic relation {mr['mr_input_relation']}, {mr['mr_output_relation']}"
         )
         followup_input_generator_prompt = (
-            self.template_formatter.function_followup_input_generator_prompt_formatter(
+            self.template_formatter.followup_input_generator_prompt_formatter(
                 mr=mr, function_info=function_info
             )
         )
@@ -145,7 +147,7 @@ class LLM_MR_Generator(BaseGenerator):
 
         return generator
 
-    def gen_valid_code_for_function(self, mr: dict, function_info: dict):
+    def gen_valid_code(self, mr: dict, function_info: dict):
         """
         Generate valid code for a function based on the given metamorphic relation and function information.
         The generated function returns True if the function comply with the metamorphic relation, otherwise returns False.
@@ -155,7 +157,7 @@ class LLM_MR_Generator(BaseGenerator):
             f"Generating valid code for function {function_info['name']} with metamorphic relation {mr['mr_input_relation']}"
         )
         valid_code_prompt = (
-            self.template_formatter.function_valid_code_prompt_formatter(
+            self.template_formatter.valid_code_prompt_formatter(
                 mr=mr, function_info=function_info
             )
         )

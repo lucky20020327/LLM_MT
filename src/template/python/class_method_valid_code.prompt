@@ -1,0 +1,69 @@
+Given the class method `{function_name}` of class `{class_name}` defined in the Python module `{module_name}`:
+
+```python
+def {function_name}{function_signature}:
+    \"\"\"
+    {function_docstring}
+    \"\"\"
+```
+
+The class method is part of the class `{class_name}` which can be instantiated as follows:
+
+```python
+{class_name}{class_signature}
+```
+
+The docstring of the class `{class_name}` is:
+```python
+{class_docstring}
+```
+
+And the specified metamorphic relations:
+
+* **Input Metamorphic Relation:**
+  {input_metamorphic_relation}
+  {input_transformation_steps}
+
+* **Output Metamorphic Relation:**
+  {output_metamorphic_relation}
+  {output_validation_steps}
+
+Please implement a function named `validate_MR_result` that checks whether the results of two calls to `{function_name}` (using source and follow-up objects/inputs) satisfy the specified output metamorphic relations.
+Any file created in the process must be in the folder '/tmp/{function_name}'.
+
+The function signature should be:
+
+```validate_MR_result
+def validate_MR_result(source_object, followup_object, source_input, followup_input, source_result, followup_result):
+    \"\"\"
+    Validate the results of two calls to the `{function_name}` function against the specified output metamorphic relations.
+
+    Parameters:
+        source_object: The object of class {class_name} of the source call of {function_name}.
+        followup_object: The object of class {class_name} of the followup call of {function_name}.
+        source_input: A dict of original input parameters used for the first call to `{function_name}` in the format:
+            {{
+                'param1': value1,
+                'param2': value2,
+                ...
+            }}
+        followup_input: A dict of modified input parameters used for the follow-up call to `{function_name}` in the format:
+            {{
+                'param1': modified_value1,
+                'param2': modified_value2,
+                ...
+            }}
+        source_result: The result from the first (source) call to `{function_name}`.
+        followup_result: The result from the follow-up call to `{function_name}`.
+
+    Raises:
+        AssertionError: If the results do not satisfy the metamorphic relations.
+    \"\"\"
+    # Check if the results satisfy the output metamorphic relations
+    {{output_metamorphic_relation_check}}
+
+    # Additional checks can be added here as needed
+```
+
+Please return a complete implementation with the full function body.
+Make sure the implementation is enclosed in ```validate_MR_result and ```, so it can be easily parsed.

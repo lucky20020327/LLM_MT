@@ -1,0 +1,54 @@
+Given the class method `{function_name}` of class `{class_name}` defined in the Python module `{module_name}`:
+
+```python
+def {function_name}{function_signature}:
+    \"\"\"
+    {function_docstring}
+    \"\"\"
+```
+
+The class method is part of the class `{class_name}` which can be instantiated as follows:
+
+```python
+{class_name}{class_signature}
+```
+
+The docstring of the class `{class_name}` is:
+```python
+{class_docstring}
+```
+
+Please write a generator function named `followup_input_generator` that takes a source object and input dictionary and returns a valid follow-up object and input parameter set that satisfies the specified metamorphic relations:
+
+{input_metamorphic_relation}
+
+The transformation from the source object and input to the follow-up object and input must follow the following steps:
+
+{input_transformation_steps}
+
+The generated follow-up objects and inputs must also satisfy the following constraints:
+
+{input_constraints}
+
+Any file created in the process must be in the folder '/tmp/{function_name}'.
+
+The required function signature is:
+
+```followup_input_generator
+def followup_input_generator(source_object: {class_name}, source_input: dict):
+    \"\"\"
+    Generate a follow-up object and follow-up input parameter set for the `{function_name}` function based on the given source object and source input, ensuring that the result satisfies the specified metamorphic relations:
+    {input_metamorphic_relation}
+
+    Parameters:
+        source_object ({class_name}): An instance of the class `{class_name}` representing the source object.
+        source_input (dict): A dictionary representing the original input parameters for `{function_name}`.
+
+    Returns:
+        follow_up_object ({class_name}): An instance of the class `{class_name}` representing the follow-up object.
+        dict: A dictionary representing a valid follow-up input parameter set for `{function_name}`.
+    \"\"\"
+```
+
+Please return a complete implementation with signature, docstring and function body.
+Please return your implementation enclosed in ```followup_input_generator and ```, so it can be easily parsed.
