@@ -1,0 +1,42 @@
+Given the class method `{function_name}` of class `{class_name}` defined in the Python module `{module_name}`:
+
+```python
+def {function_name}{function_signature}:
+    \"\"\"
+    {function_docstring}
+    \"\"\"
+```
+
+The class method is part of the class `{class_name}` which can be instantiated as follows:
+
+```python
+{class_name}{class_signature}
+```
+
+The docstring of the class `{class_name}` is:
+```python
+{class_docstring}
+```
+
+Please write a generator function named `source_input_generator` that yields valid class object and input parameter sets required to call `{function_name}`. The generated objects and inputs must satisfy the following constraints:
+
+{input_constraints}
+
+Any file created in the process must be in the folder '/tmp/{function_name}'.
+
+The required signature for the generator function is:
+
+```source_input_generator
+def source_input_generator(k: int):
+    \"\"\"
+    Generate `k` input objects and parameter sets for the `{function_name}` function call.
+
+    Parameters:
+        k (int): The number of input parameter sets to generate.
+
+    Yields:
+        Each yielded value should be a tuple containing an instance of `{class_name}` and a dict representing a valid set of input parameters for the `{function_name}` function.
+    \"\"\"
+```
+Please return a complete implementation with signature, docstring and function body.
+Please return your implementation enclosed in ```source_input_generator and ```, so it can be easily parsed.

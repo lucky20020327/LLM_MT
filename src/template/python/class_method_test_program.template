@@ -1,39 +1,42 @@
-{import_statements}
+from {module_name} import {class_name}
 
 # metamorphic_relation
 """
 {metamorphic_relation}
 """
 
+# function_source_code
+{{function_source_code}}
+
 # source_input_generator(k:int)
 {source_input_code}
 
-# followup_input_generator(source_input: dict)
+# followup_input_generator(source_object: {class_name}, source_input: dict)
 {followup_input_code}
 
-# validate_MR_result(source_input, followup_input, source_result, followup_result)
+# validate_MR_result(source_object: {class_name}, followup_object: {class_name}, source_input, followup_input, source_result, followup_result)
 {validate_result_code}
 
 
 def test_{function_name}():
     """
-    Test case for {function_name}.
+    Test case for {function_name} of {class_name}.
     """
 
     # Get the source inputs
-    source_inputs = source_input_generator({input_count})
+    source_objects_and_inputs = source_input_generator({input_count})
 
-    for source_input in source_inputs:
+    for source_object, source_input in source_objects_and_inputs:
         # Call the function with the source input
-        source_result = {function_name}(**source_input)
+        source_result = my_{function_name}(source_object, **source_input)
 
         # Generate follow-up input parameters
-        followup_input = followup_input_generator(source_input)
+        followup_object, followup_input = followup_input_generator(source_object, source_input)
 
         # Call the function with the follow-up input
-        followup_result = {function_name}(**followup_input)
+        followup_result = my_{function_name}(followup_object, **followup_input)
 
         # Validate the results using metamorphic relations
-        validate_MR_result(source_input, followup_input, source_result, followup_result)
+        validate_MR_result(source_object, followup_object, source_input, followup_input, source_result, followup_result)
 
 test_{function_name}()

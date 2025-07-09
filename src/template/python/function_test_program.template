@@ -1,3 +1,5 @@
+from {module_name} import {function_name}
+
 # metamorphic_relation
 """
 {metamorphic_relation}

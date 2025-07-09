@@ -5,6 +5,7 @@ import tempfile
 import subprocess
 import inspect
 import argparse
+import re
 
 from typing import Optional, Dict, Any
 
@@ -21,7 +22,7 @@ class PythonEvaluator(BaseEvaluator):
     PythonEvaluator is a class that evaluates metamorphic relations (MRs) for Python functions.
     It executes test programs generated from MRs and get the evaluation metrics for the MRs.
     """
-    
+
     def __init__(self, args: argparse.Namespace):
         """
         Initialize the PythonEvaluator with the provided arguments.
@@ -163,6 +164,49 @@ class PythonEvaluator(BaseEvaluator):
 
         return result
 
+    def get_decorated_function(self, function_info):
+        if function_info["type"] == "local_function":
+            return function_info["source_code"]
+
+        function_name = function_info["name"]
+        signature = function_info["signature"]
+        # using re to extract parameters from the signature
+        # the signature is like "(param1[: type1], param2[: type2]) -> return_type"
+        # the parameters are (param1, param2)
+        match = re.search(r"\((.*?)\)", signature)
+        if match:
+            params_str = match.group(1)  # "param1: type1, param2: type2"
+
+            # Split by comma, strip each part, and extract param name before colon
+            params = [
+                re.split(r":\s*", param.strip())[0]
+                for param in params_str.split(",")
+                if param.strip()
+            ]
+            after_star_in_params = False
+            params_postprocess = []
+            for param in params:
+                if param == "*":
+                    after_star_in_params = True
+                elif param == "self":
+                    continue
+                elif after_star_in_params:
+                    params_postprocess.append(f"{param}={param}")
+                else:
+                    params_postprocess.append(param)
+            params = params_postprocess
+        else:
+            raise ValueError(f"Invalid signature format: {signature}")
+
+        if function_info["type"] == "function":
+            return f"""def my_{function_name}{signature}:
+    return {function_name}({",".join(params)})"""
+        elif function_info["type"] == "class_method":
+            return f"""def my_{function_name}(object, {",".join(params)}):
+    return object.{function_name}({",".join(params)})"""
+        else:
+            raise NotImplementedError("Error")
+
     def execute_test_program(
         self,
         test_program_file_path: str,
@@ -185,7 +229,7 @@ class PythonEvaluator(BaseEvaluator):
             )
             if result.returncode != 0:
                 logger.error(
-                    f"Test program {test_program_file_path} failed with return code {result.returncode}"
+                    f"Test program {test_program_file_path} failed with error message {result.stderr.strip()}"
                 )
                 return False, result.stderr.strip(), {}
             logger.info(f"Test program {test_program_file_path} executed successfully.")
