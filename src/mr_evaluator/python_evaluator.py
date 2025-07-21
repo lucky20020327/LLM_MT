@@ -179,7 +179,7 @@ class PythonEvaluator(BaseEvaluator):
 
             # Split by comma, strip each part, and extract param name before colon
             params = [
-                re.split(r":\s*", param.strip())[0]
+                re.split(r":\s*", param.strip())[0].split("=")[0].strip()
                 for param in params_str.split(",")
                 if param.strip()
             ]

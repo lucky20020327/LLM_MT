@@ -1,10 +1,29 @@
 import argparse
 import os
 
-PYTHON_DATASETS = ["humaneval", "bigcodebench", "skcriteria"]
+
+# TODO: expand this list when more datasets are added
+PYTHON_DATASETS = ["humaneval", "bigcodebench", "skcriteria", "biopython", "numpy"]
 R_DATASETS = ["rmcda"]
 
 
+# TODO: expand this list when more datasets are added
+def get_language_of_dataset(args: argparse.Namespace) -> str:
+    """
+    Get the language of the dataset based on the dataset type.
+    Returns 'python' for Python datasets and 'R' for R datasets.
+    """
+    if args.dataset in PYTHON_DATASETS:
+        return "python"
+    elif args.dataset in R_DATASETS:
+        return "R"
+    else:
+        raise ValueError(
+            f"Dataset '{args.dataset}' is not supported. Please use 'humaneval', 'bigcodebench', or 'rmcda'."
+        )
+
+
+# TODO: expand this list when more datasets are added
 def get_suffix_of_dataset(args: argparse.Namespace) -> str:
     """Get the file suffix based on the dataset type."""
     if args.dataset in PYTHON_DATASETS:  # python
@@ -17,6 +36,7 @@ def get_suffix_of_dataset(args: argparse.Namespace) -> str:
         )
 
 
+# TODO: expand this list when more datasets are added
 def get_sep_of_dataset(args: argparse.Namespace) -> str:
     """
     Get the library separator based on the dataset type.

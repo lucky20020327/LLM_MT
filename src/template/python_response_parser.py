@@ -71,9 +71,21 @@ class PythonParser(BaseParser):
         """
         if identifier not in response:
             identifier = "```python"
+        # get all the blocks inside indentifier and ```
+        all_possible_blocks = response.split(identifier)[1:]
+        all_possible_blocks = [
+            block.split("```")[0].strip()
+            for block in all_possible_blocks
+            if block.strip()
+        ]
         try:
-            function_code = response.split(identifier)[-1].split("```")[0].strip()
-            if target_function_signature not in function_code:
+            for function_code in all_possible_blocks:
+                # Check if the target function signature is in the function code
+                if target_function_signature in function_code:
+                    # If found, return the function code
+                    logger.info(f"Function code found for {target_function_signature}")
+                    return function_code
+            else:
                 logger.error(
                     f"Function signature '{target_function_signature}' not found in the response."
                 )

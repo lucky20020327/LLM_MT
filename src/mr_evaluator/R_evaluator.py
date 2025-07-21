@@ -53,4 +53,29 @@ class REvaluator(BaseEvaluator):
             - A dictionary with coverage information if requested.
         """
 
-        return True, "", {}  # Placeholder for actual implementation
+        import rpy2.robjects as robjects
+        from rpy2.robjects.packages import importr
+
+        # Import the base package for R
+        base = importr("base")
+
+        try:
+            # Read the test program file
+            with open(test_program_file_path, "r") as file:
+                test_program_code = file.read()
+
+            # Execute the test program code
+            robjects.r(test_program_code)
+
+            # If coverage is requested, collect coverage information
+            if with_coverage:
+                # Not implemented
+                coverage_info = {}
+            else:
+                coverage_info = {}
+
+            return True, "Test program executed successfully.", coverage_info
+
+        except Exception as e:
+            logger.error(f"Error executing test program: {e}")
+            return False, str(e), {}

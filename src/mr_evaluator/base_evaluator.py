@@ -72,7 +72,7 @@ class BaseEvaluator(ABC):
             "Subclasses must implement the execute_test_program method."
         )
 
-    def evaluate(self, function_info: dict):
+    def evaluate(self, function_info: dict, with_coverage: bool = False):
         """
         Evaluate the metamorphic relations on a function and its mutants.
         This function should execute the test program and check if the metamorphic relations hold.
@@ -152,7 +152,7 @@ class BaseEvaluator(ABC):
                     test_program_instance_folder, original_test_program_file_name
                 ),
                 self.args.timeout,
-                with_coverage=True,
+                with_coverage=with_coverage,
                 function_name=function_name,
             )
             if not execute_result:

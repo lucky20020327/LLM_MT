@@ -4,6 +4,11 @@ import sys
 
 import argparse
 
+pwd = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(pwd, ".."))
+
+from utils.utils import get_language_of_dataset
+
 
 class BaseFormatter(ABC):
     """
@@ -16,94 +21,209 @@ class BaseFormatter(ABC):
         """
         self.args = args
 
-    def load_template(self, language: str):
-        _pwd = os.path.dirname(os.path.abspath(__file__))
+    @property
+    def function_followup_input_generator_prompt(self) -> str:
+        """
+        The prompt template for generating follow-up inputs for functions.
+        """
+        if not hasattr(self, "_function_followup_input_generator_prompt"):
+            self._function_followup_input_generator_prompt = open(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    get_language_of_dataset(self.args),
+                    "function_followup_input_generator.prompt",
+                ),
+                "r",
+                encoding="utf-8",
+            ).read()
+        return self._function_followup_input_generator_prompt
 
-        # followup input generator prompts
-        with open(
-            os.path.join(_pwd, language, "function_followup_input_generator.prompt"),
-            "r",
-            encoding="utf-8",
-        ) as f:
-            self.function_followup_input_generator_prompt = f.read()
-        with open(
-            os.path.join(
-                _pwd, language, "class_method_followup_input_generator.prompt"
-            ),
-            "r",
-            encoding="utf-8",
-        ) as f:
-            self.class_method_followup_input_generator_prompt = f.read()
+    @property
+    def class_method_followup_input_generator_prompt(self) -> str:
+        """
+        The prompt template for generating follow-up inputs for class methods.
+        """
+        if not hasattr(self, "_class_method_followup_input_generator_prompt"):
+            self._class_method_followup_input_generator_prompt = open(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    get_language_of_dataset(self.args),
+                    "class_method_followup_input_generator.prompt",
+                ),
+                "r",
+                encoding="utf-8",
+            ).read()
+        return self._class_method_followup_input_generator_prompt
 
-        # source input generator prompts
-        with open(
-            os.path.join(_pwd, language, "function_source_input_generator.prompt"),
-            "r",
-            encoding="utf-8",
-        ) as f:
-            self.function_source_input_generator_prompt = f.read()
-        with open(
-            os.path.join(_pwd, language, "class_method_source_input_generator.prompt"),
-            "r",
-            encoding="utf-8",
-        ) as f:
-            self.class_method_source_input_generator_prompt = f.read()
+    @property
+    def function_source_input_generator_prompt(self) -> str:
+        """
+        The prompt template for generating source inputs for functions.
+        """
+        if not hasattr(self, "_function_source_input_generator_prompt"):
+            self._function_source_input_generator_prompt = open(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    get_language_of_dataset(self.args),
+                    "function_source_input_generator.prompt",
+                ),
+                "r",
+                encoding="utf-8",
+            ).read()
+        return self._function_source_input_generator_prompt
 
-        # metamorphic relation prompts
-        with open(
-            os.path.join(_pwd, language, "function_mr.prompt"),
-            "r",
-            encoding="utf-8",
-        ) as f:
-            self.function_mr_prompt = f.read()
-        with open(
-            os.path.join(_pwd, language, "class_method_mr.prompt"),
-            "r",
-            encoding="utf-8",
-        ) as f:
-            self.class_method_mr_prompt = f.read()
+    @property
+    def class_method_source_input_generator_prompt(self) -> str:
+        """
+        The prompt template for generating source inputs for class methods.
+        """
+        if not hasattr(self, "_class_method_source_input_generator_prompt"):
+            self._class_method_source_input_generator_prompt = open(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    get_language_of_dataset(self.args),
+                    "class_method_source_input_generator.prompt",
+                ),
+                "r",
+                encoding="utf-8",
+            ).read()
+        return self._class_method_source_input_generator_prompt
 
-        # valid code prompts
-        with open(
-            os.path.join(_pwd, language, "function_valid_code.prompt"),
-            "r",
-            encoding="utf-8",
-        ) as f:
-            self.function_valid_code_prompt = f.read()
-        with open(
-            os.path.join(_pwd, language, "class_method_valid_code.prompt"),
-            "r",
-            encoding="utf-8",
-        ) as f:
-            self.class_method_valid_code_prompt = f.read()
-            
-        # test program templates
-        with open(
-            os.path.join(_pwd, language, "local_function_test_program.template"),
-            "r",
-            encoding="utf-8",
-        ) as f:
-            self.local_function_test_program_template = f.read()
-        with open(
-            os.path.join(_pwd, language, "function_test_program.template"),
-            "r",
-            encoding="utf-8",
-        ) as f:
-            self.function_test_program_template = f.read()
-        with open(
-            os.path.join(_pwd, language, "class_method_test_program.template"),
-            "r",
-            encoding="utf-8",
-        ) as f:
-            self.class_method_test_program_template = f.read()
-            
-        # # deep report templates
-        # with open(
-        #     os.path.join(_pwd, language, "function_deep_report.template"),
-        #     "r",
-        #     encoding="utf-8",
-        # ) as f:
-        #     self.function_deep_report_template = f.read()
+    @property
+    def function_mr_prompt(self) -> str:
+        """
+        The prompt template for generating metamorphic relations for functions.
+        """
+        if not hasattr(self, "_function_mr_prompt"):
+            self._function_mr_prompt = open(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    get_language_of_dataset(self.args),
+                    "function_mr.prompt",
+                ),
+                "r",
+                encoding="utf-8",
+            ).read()
+        return self._function_mr_prompt
+
+    @property
+    def class_method_mr_prompt(self) -> str:
+        """
+        The prompt template for generating metamorphic relations for class methods.
+        """
+        if not hasattr(self, "_class_method_mr_prompt"):
+            self._class_method_mr_prompt = open(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    get_language_of_dataset(self.args),
+                    "class_method_mr.prompt",
+                ),
+                "r",
+                encoding="utf-8",
+            ).read()
+        return self._class_method_mr_prompt
+
+    @property
+    def function_valid_code_prompt(self) -> str:
+        """
+        The prompt template for validating code for functions.
+        """
+        if not hasattr(self, "_function_valid_code_prompt"):
+            self._function_valid_code_prompt = open(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    get_language_of_dataset(self.args),
+                    "function_valid_code.prompt",
+                ),
+                "r",
+                encoding="utf-8",
+            ).read()
+        return self._function_valid_code_prompt
+
+    @property
+    def class_method_valid_code_prompt(self) -> str:
+        """
+        The prompt template for validating code for class methods.
+        """
+        if not hasattr(self, "_class_method_valid_code_prompt"):
+            self._class_method_valid_code_prompt = open(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    get_language_of_dataset(self.args),
+                    "class_method_valid_code.prompt",
+                ),
+                "r",
+                encoding="utf-8",
+            ).read()
+        return self._class_method_valid_code_prompt
+
+    @property
+    def local_function_test_program_template(self) -> str:
+        """
+        The template for generating test programs for local functions.
+        """
+        if not hasattr(self, "_local_function_test_program_template"):
+            self._local_function_test_program_template = open(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    get_language_of_dataset(self.args),
+                    "local_function_test_program.template",
+                ),
+                "r",
+                encoding="utf-8",
+            ).read()
+        return self._local_function_test_program_template
+
+    @property
+    def function_test_program_template(self) -> str:
+        """
+        The template for generating test programs for functions.
+        """
+        if not hasattr(self, "_function_test_program_template"):
+            self._function_test_program_template = open(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    get_language_of_dataset(self.args),
+                    "function_test_program.template",
+                ),
+                "r",
+                encoding="utf-8",
+            ).read()
+        return self._function_test_program_template
+
+    @property
+    def class_method_test_program_template(self) -> str:
+        """
+        The template for generating test programs for class methods.
+        """
+        if not hasattr(self, "_class_method_test_program_template"):
+            self._class_method_test_program_template = open(
+                os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)),
+                    get_language_of_dataset(self.args),
+                    "class_method_test_program.template",
+                ),
+                "r",
+                encoding="utf-8",
+            ).read()
+        return self._class_method_test_program_template
+
+    # @property
+    # def function_deep_report_template(self) -> str:
+    #     """
+    #     The template for generating deep reports for functions.
+    #     """
+    #     if not hasattr(self, "_function_deep_report_template"):
+    #         self._function_deep_report_template = open(
+    #             os.path.join(
+    #                 os.path.dirname(os.path.abspath(__file__)),
+    #                 get_language_of_dataset(self.args),
+    #                 "function_deep_report.template",
+    #             ),
+    #             "r",
+    #             encoding="utf-8",
+    #         ).read()
+    #     return self._function_deep_report_template
 
     def followup_input_generator_prompt_formatter(
         self,
@@ -125,7 +245,6 @@ class BaseFormatter(ABC):
                 mr=mr, function_info=function_info
             )
 
-    @abstractmethod
     def function_followup_input_generator_prompt_formatter(
         self,
         mr: dict,
@@ -136,7 +255,6 @@ class BaseFormatter(ABC):
         """
         raise NotImplementedError("Subclasses must implement the format method.")
 
-    @abstractmethod
     def class_method_followup_input_generator_prompt_formatter(
         self,
         mr: dict,
@@ -167,7 +285,6 @@ class BaseFormatter(ABC):
                 mr=mr, function_info=function_info
             )
 
-    @abstractmethod
     def function_source_input_generator_prompt_formatter(
         self,
         mr: dict,
@@ -178,7 +295,6 @@ class BaseFormatter(ABC):
         """
         raise NotImplementedError("Subclasses must implement the format method.")
 
-    @abstractmethod
     def class_method_source_input_generator_prompt_formatter(
         self,
         mr: dict,
@@ -211,7 +327,6 @@ class BaseFormatter(ABC):
                 function_analysis_report=function_analysis_report,
             )
 
-    @abstractmethod
     def function_mr_prompt_formatter(
         self,
         function_info: dict,
@@ -222,7 +337,6 @@ class BaseFormatter(ABC):
         """
         raise NotImplementedError("Subclasses must implement the format method.")
 
-    @abstractmethod
     def class_method_mr_prompt_formatter(
         self,
         function_info: dict,
@@ -253,7 +367,6 @@ class BaseFormatter(ABC):
                 mr=mr, function_info=function_info
             )
 
-    @abstractmethod
     def function_valid_code_prompt_formatter(
         self,
         mr: dict,
@@ -264,7 +377,6 @@ class BaseFormatter(ABC):
         """
         raise NotImplementedError("Subclasses must implement the format method.")
 
-    @abstractmethod
     def class_method_valid_code_prompt_formatter(
         self,
         mr: dict,
@@ -311,7 +423,6 @@ class BaseFormatter(ABC):
                 valid_code=valid_code,
             )
 
-    @abstractmethod
     def local_function_test_program_template_formatter(
         self,
         function_info: dict,
@@ -325,7 +436,6 @@ class BaseFormatter(ABC):
         """
         raise NotImplementedError("Subclasses must implement the format method.")
 
-    @abstractmethod
     def function_test_program_template_formatter(
         self,
         function_info: dict,
@@ -339,7 +449,6 @@ class BaseFormatter(ABC):
         """
         raise NotImplementedError("Subclasses must implement the format method.")
 
-    @abstractmethod
     def class_method_test_program_template_formatter(
         self,
         function_info: dict,

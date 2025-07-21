@@ -21,7 +21,6 @@ class PythonFormatter(BaseFormatter):
         Initialize the PythonFormatter and load the templates.
         """
         super().__init__(args=args)
-        self.load_template("python")
 
     def function_followup_input_generator_prompt_formatter(
         self,

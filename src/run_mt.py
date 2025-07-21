@@ -10,6 +10,8 @@ from loguru import logger
 from utils.utils import (
     get_MR_file_path,
     get_test_program_template_file_path,
+    PYTHON_DATASETS,
+    R_DATASETS,
 )
 
 from template import (
@@ -141,7 +143,7 @@ def arg_parser():
         "--dataset",
         type=str,
         required=True,
-        choices=["humaneval", "bigcodebench", "rmcda", "skcriteria"],
+        choices=PYTHON_DATASETS + R_DATASETS,
     )
     parser.add_argument(
         "--api_file",
@@ -189,7 +191,7 @@ def arg_parser():
         "--strategy",
         type=str,
         default="simple",
-        choices=["simple", "func_deep_report"],
+        choices=["simple"],  # , "func_deep_report"],
     )
     return parser
 
